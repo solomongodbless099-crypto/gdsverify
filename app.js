@@ -1,1469 +1,51 @@
 /* =========================================================
    GDSVERIFY.COM
-   CUSTOMER APPLICATION
-   APP.JS — PART 1
-   AUTHENTICATION + DASHBOARD LOCK
+   CUSTOMER APPLICATION JAVASCRIPT
+   PART 1 — CORE / AUTHENTICATION / API
    ========================================================= */
 
 "use strict";
 
-/* =========================================================
-   GDSVERIFY CONFIGURATION
-   ========================================================= */
-
 const GDSVERIFY = {
-
-    /*
-     * Frontend API endpoint.
-     *
-     * IMPORTANT:
-     * PHP cannot run directly on Netlify.
-     * We will connect this to the final backend when
-     * the backend hosting stage is completed.
-     */
-    apiBase: "/api.php",
-
     api: {
-        countries: "/api.php?action=countries",
-        services: "/api.php?action=services",
-        availability: "/api.php?action=availability",
-        buy: "/api.php?action=buy",
-        order: "/api.php?action=order",
-        cancel: "/api.php?action=cancel",
-        provider: "/api.php?action=provider"
+        auth: "/.netlify/functions/auth",
+        countries: "/.netlify/functions/countries",
+        services: "/.netlify/functions/services",
+        buyNumber: "/.netlify/functions/buy-number",
+        checkOtp: "/.netlify/functions/check-otp",
+        wallet: "/.netlify/functions/wallet"
     },
 
     storage: {
-        session: "gdsverify_auth",
         user: "gdsverify_user",
-        remember: "gdsverify_remember"
+        token: "gdsverify_token",
+        orders: "gdsverify_orders"
     }
 };
 
 
 /* =========================================================
-   DOM HELPERS
+   BASIC HELPERS
    ========================================================= */
 
 function $(id) {
     return document.getElementById(id);
 }
 
-function showElement(element) {
+function show(element) {
     if (element) {
         element.classList.remove("hidden");
     }
 }
 
-function hideElement(element) {
+function hide(element) {
     if (element) {
         element.classList.add("hidden");
     }
 }
 
-
-/* =========================================================
-   AUTHENTICATION STATE
-   ========================================================= */
-
-/*
- * We use browser storage for the frontend stage.
- *
- * This controls the customer interface while we build the
- * complete backend authentication system.
- *
- * Later, real PHP/MySQL authentication will replace this
- * temporary frontend session mechanism.
- */
-
-function getAuthSession() {
-
-    try {
-
-        const session = sessionStorage.getItem(
-            GDSVERIFY.storage.session
-        );
-
-        if (session === "authenticated") {
-            return true;
-        }
-
-        const remembered = localStorage.getItem(
-            GDSVERIFY.storage.remember
-        );
-
-        return remembered === "authenticated";
-
-    } catch (error) {
-
-        console.error(
-            "Unable to read authentication state:",
-            error
-        );
-
-        return false;
-    }
-}
-
-
-function getStoredUser() {
-
-    try {
-
-        const user = localStorage.getItem(
-            GDSVERIFY.storage.user
-        );
-
-        if (!user) {
-            return null;
-        }
-
-        return JSON.parse(user);
-
-    } catch (error) {
-
-        console.error(
-            "Unable to read stored user:",
-            error
-        );
-
-        return null;
-    }
-}
-
-
-/* =========================================================
-   SAVE AUTHENTICATION
-   ========================================================= */
-
-function saveAuthentication(user, remember = false) {
-
-    try {
-
-        sessionStorage.setItem(
-            GDSVERIFY.storage.session,
-            "authenticated"
-        );
-
-        localStorage.setItem(
-            GDSVERIFY.storage.user,
-            JSON.stringify(user)
-        );
-
-        if (remember) {
-
-            localStorage.setItem(
-                GDSVERIFY.storage.remember,
-                "authenticated"
-            );
-
-        } else {
-
-            localStorage.removeItem(
-                GDSVERIFY.storage.remember
-            );
-        }
-
-        return true;
-
-    } catch (error) {
-
-        console.error(
-            "Unable to save authentication:",
-            error
-        );
-
-        return false;
-    }
-}
-
-
-/* =========================================================
-   CLEAR AUTHENTICATION
-   ========================================================= */
-
-function clearAuthentication() {
-
-    try {
-
-        sessionStorage.removeItem(
-            GDSVERIFY.storage.session
-        );
-
-        localStorage.removeItem(
-            GDSVERIFY.storage.remember
-        );
-
-        localStorage.removeItem(
-            GDSVERIFY.storage.user
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Unable to clear authentication:",
-            error
-        );
-    }
-}
-
-
-/* =========================================================
-   AUTH MESSAGE
-   ========================================================= */
-
-function showAuthMessage(message, type = "info") {
-
-    const messageBox = $("authMessage");
-
-    if (!messageBox) {
-        return;
-    }
-
-    messageBox.textContent = message;
-
-    messageBox.className =
-        "auth-message show " + type;
-}
-
-
-function hideAuthMessage() {
-
-    const messageBox = $("authMessage");
-
-    if (!messageBox) {
-        return;
-    }
-
-    messageBox.textContent = "";
-
-    messageBox.className = "auth-message";
-}
-
-
-/* =========================================================
-   LOGIN / REGISTER VIEW SWITCHING
-   ========================================================= */
-
-function showLoginView() {
-
-    const loginView = $("loginView");
-    const registerView = $("registerView");
-
-    showElement(loginView);
-    hideElement(registerView);
-
-    hideAuthMessage();
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-
-function showRegisterView() {
-
-    const loginView = $("loginView");
-    const registerView = $("registerView");
-
-    hideElement(loginView);
-    showElement(registerView);
-
-    hideAuthMessage();
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-
-/* =========================================================
-   AUTH SCREEN
-   ========================================================= */
-
-function showAuthScreen() {
-
-    const authScreen = $("authScreen");
-    const appScreen = $("appScreen");
-
-    showElement(authScreen);
-    hideElement(appScreen);
-
-    showLoginView();
-}
-
-
-/* =========================================================
-   APPLICATION SCREEN
-   ========================================================= */
-
-function showAppScreen() {
-
-    const authScreen = $("authScreen");
-    const appScreen = $("appScreen");
-
-    /*
-     * Authentication gate:
-     *
-     * NEVER display the dashboard unless the user is
-     * authenticated.
-     */
-
-    if (!getAuthSession()) {
-
-        showAuthScreen();
-
-        return false;
-    }
-
-    hideElement(authScreen);
-    showElement(appScreen);
-
-    initializeCustomerDashboard();
-
-    return true;
-}
-
-
-/* =========================================================
-   LOGOUT
-   ========================================================= */
-
-function logoutUser() {
-
-    clearAuthentication();
-
-    /*
-     * Immediately hide the dashboard.
-     */
-    hideElement($("appScreen"));
-
-    /*
-     * Return to authentication screen.
-     */
-    showElement($("authScreen"));
-
-    showLoginView();
-
-    showAuthMessage(
-        "You have been logged out successfully.",
-        "success"
-    );
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-
-/* =========================================================
-   PASSWORD VALIDATION
-   ========================================================= */
-
-function validatePassword(password) {
-
-    if (!password) {
-        return "Please enter your password.";
-    }
-
-    if (password.length < 6) {
-        return "Password must contain at least 6 characters.";
-    }
-
-    return null;
-}
-
-
-function validateEmail(email) {
-
-    if (!email) {
-        return "Please enter your email address.";
-    }
-
-    const pattern =
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!pattern.test(email)) {
-        return "Please enter a valid email address.";
-    }
-
-    return null;
-}
-
-
-/* =========================================================
-   LOGIN FORM
-   ========================================================= */
-
-function handleLogin(event) {
-
-    event.preventDefault();
-
-    hideAuthMessage();
-
-    const emailInput = $("loginEmail");
-    const passwordInput = $("loginPassword");
-    const rememberInput = $("rememberMe");
-
-    const email =
-        emailInput
-            ? emailInput.value.trim().toLowerCase()
-            : "";
-
-    const password =
-        passwordInput
-            ? passwordInput.value
-            : "";
-
-    const remember =
-        rememberInput
-            ? rememberInput.checked
-            : false;
-
-
-    /* Validate email */
-
-    const emailError =
-        validateEmail(email);
-
-    if (emailError) {
-
-        showAuthMessage(
-            emailError,
-            "error"
-        );
-
-        if (emailInput) {
-            emailInput.focus();
-        }
-
-        return;
-    }
-
-
-    /* Validate password */
-
-    const passwordError =
-        validatePassword(password);
-
-    if (passwordError) {
-
-        showAuthMessage(
-            passwordError,
-            "error"
-        );
-
-        if (passwordInput) {
-            passwordInput.focus();
-        }
-
-        return;
-    }
-
-
-    /*
-     * TEMPORARY FRONTEND LOGIN
-     *
-     * This lets us build and test the customer interface
-     * before connecting the real PHP/MySQL authentication.
-     */
-
-    const storedUser =
-        getStoredUser();
-
-
-    /*
-     * If the user has previously registered on this browser,
-     * verify against the saved account.
-     */
-
-    if (storedUser && storedUser.email) {
-
-        if (
-            storedUser.email.toLowerCase() !== email
-        ) {
-
-            showAuthMessage(
-                "No account was found with this email address.",
-                "error"
-            );
-
-            return;
-        }
-
-        if (
-            storedUser.password &&
-            storedUser.password !== password
-        ) {
-
-            showAuthMessage(
-                "Incorrect password. Please try again.",
-                "error"
-            );
-
-            return;
-        }
-
-    }
-
-
-    /*
-     * For the temporary frontend stage, if no registered
-     * browser account exists, allow the login so we can
-     * continue building the interface.
-     *
-     * Real authentication will be enforced by the backend.
-     */
-
-    const user = storedUser || {
-        firstName:
-            email.split("@")[0] || "Customer",
-
-        lastName: "",
-
-        email: email,
-
-        phone: "",
-
-        password: password
-    };
-
-
-    saveAuthentication(
-        user,
-        remember
-    );
-
-
-    showAuthMessage(
-        "Login successful. Welcome to GDSVERIFY!",
-        "success"
-    );
-
-
-    setTimeout(function () {
-
-        showAppScreen();
-
-    }, 500);
-}
-
-
-/* =========================================================
-   REGISTRATION FORM
-   ========================================================= */
-
-function handleRegistration(event) {
-
-    event.preventDefault();
-
-    hideAuthMessage();
-
-
-    const firstName =
-        $("registerFirstName")
-            ? $("registerFirstName").value.trim()
-            : "";
-
-    const lastName =
-        $("registerLastName")
-            ? $("registerLastName").value.trim()
-            : "";
-
-    const email =
-        $("registerEmail")
-            ? $("registerEmail").value.trim().toLowerCase()
-            : "";
-
-    const phone =
-        $("registerPhone")
-            ? $("registerPhone").value.trim()
-            : "";
-
-    const password =
-        $("registerPassword")
-            ? $("registerPassword").value
-            : "";
-
-    const confirmPassword =
-        $("registerConfirmPassword")
-            ? $("registerConfirmPassword").value
-            : "";
-
-    const termsAccepted =
-        $("acceptTerms")
-            ? $("acceptTerms").checked
-            : false;
-
-
-    /* =====================================================
-       VALIDATION
-       ===================================================== */
-
-    if (!firstName) {
-
-        showAuthMessage(
-            "Please enter your first name.",
-            "error"
-        );
-
-        $("registerFirstName")?.focus();
-
-        return;
-    }
-
-
-    if (!lastName) {
-
-        showAuthMessage(
-            "Please enter your last name.",
-            "error"
-        );
-
-        $("registerLastName")?.focus();
-
-        return;
-    }
-
-
-    const emailError =
-        validateEmail(email);
-
-    if (emailError) {
-
-        showAuthMessage(
-            emailError,
-            "error"
-        );
-
-        $("registerEmail")?.focus();
-
-        return;
-    }
-
-
-    if (!phone) {
-
-        showAuthMessage(
-            "Please enter your phone number.",
-            "error"
-        );
-
-        $("registerPhone")?.focus();
-
-        return;
-    }
-
-
-    const passwordError =
-        validatePassword(password);
-
-    if (passwordError) {
-
-        showAuthMessage(
-            passwordError,
-            "error"
-        );
-
-        $("registerPassword")?.focus();
-
-        return;
-    }
-
-
-    if (password !== confirmPassword) {
-
-        showAuthMessage(
-            "Passwords do not match.",
-            "error"
-        );
-
-        $("registerConfirmPassword")?.focus();
-
-        return;
-    }
-
-
-    if (!termsAccepted) {
-
-        showAuthMessage(
-            "Please accept the Terms of Service to continue.",
-            "error"
-        );
-
-        return;
-    }
-
-
-    /* =====================================================
-       CREATE TEMPORARY CUSTOMER ACCOUNT
-       ===================================================== */
-
-    const user = {
-
-        firstName: firstName,
-
-        lastName: lastName,
-
-        email: email,
-
-        phone: phone,
-
-        password: password,
-
-        createdAt:
-            new Date().toISOString()
-    };
-
-
-    saveAuthentication(
-        user,
-        true
-    );
-
-
-    showAuthMessage(
-        "Registration successful. Welcome to GDSVERIFY!",
-        "success"
-    );
-
-
-    /*
-     * Give the customer a moment to see the success message,
-     * then unlock the dashboard.
-     */
-
-    setTimeout(function () {
-
-        showAppScreen();
-
-    }, 700);
-}
-
-
-/* =========================================================
-   INITIAL CUSTOMER DASHBOARD
-   ========================================================= */
-
-function initializeCustomerDashboard() {
-
-    const user =
-        getStoredUser();
-
-
-    /*
-     * Update customer name wherever the dashboard has a
-     * matching element.
-     */
-
-    if (user) {
-
-        const fullName =
-            (
-                (user.firstName || "") +
-                " " +
-                (user.lastName || "")
-            ).trim();
-
-
-        const possibleNames = [
-
-            $("customerName"),
-
-            $("profileName"),
-
-            $("welcomeName"),
-
-            $("userName")
-        ];
-
-
-        possibleNames.forEach(function (element) {
-
-            if (element && fullName) {
-
-                element.textContent =
-                    fullName;
-            }
-
-        });
-    }
-
-
-    /*
-     * Set authentication-dependent year.
-     */
-
-    const authYear =
-        $("authYear");
-
-    if (authYear) {
-
-        authYear.textContent =
-            new Date().getFullYear();
-    }
-
-
-    /*
-     * Continue dashboard initialization.
-     *
-     * Additional dashboard functions will be added in
-     * Part 2 and Part 3.
-     */
-
-    if (typeof loadCountries === "function") {
-
-        loadCountries();
-    }
-}
-
-
-/* =========================================================
-   PASSWORD SHOW / HIDE
-   ========================================================= */
-
-function togglePassword(inputId, button) {
-
-    const input =
-        $(inputId);
-
-    if (!input) {
-        return;
-    }
-
-
-    if (input.type === "password") {
-
-        input.type = "text";
-
-        if (button) {
-            button.textContent = "Hide";
-        }
-
-    } else {
-
-        input.type = "password";
-
-        if (button) {
-            button.textContent = "Show";
-        }
-    }
-}
-
-
-/* =========================================================
-   AUTH EVENT LISTENERS
-   ========================================================= */
-
-function setupAuthentication() {
-
-    const loginForm =
-        $("loginForm");
-
-    const registerForm =
-        $("registerForm");
-
-
-    if (loginForm) {
-
-        loginForm.addEventListener(
-            "submit",
-            handleLogin
-        );
-    }
-
-
-    if (registerForm) {
-
-        registerForm.addEventListener(
-            "submit",
-            handleRegistration
-        );
-    }
-
-
-    const showRegisterBtn =
-        $("showRegisterBtn");
-
-    if (showRegisterBtn) {
-
-        showRegisterBtn.addEventListener(
-            "click",
-            showRegisterView
-        );
-    }
-
-
-    const showLoginBtn =
-        $("showLoginBtn");
-
-    if (showLoginBtn) {
-
-        showLoginBtn.addEventListener(
-            "click",
-            showLoginView
-        );
-    }
-
-
-    const logoutBtn =
-        $("logoutBtn");
-
-    if (logoutBtn) {
-
-        logoutBtn.addEventListener(
-            "click",
-            logoutUser
-        );
-    }
-
-
-    /*
-     * Forgot password is intentionally not fully wired yet.
-     * We will connect it to real backend authentication.
-     */
-
-    const forgotPasswordBtn =
-        $("forgotPasswordBtn");
-
-    if (forgotPasswordBtn) {
-
-        forgotPasswordBtn.addEventListener(
-            "click",
-            function () {
-
-                showAuthMessage(
-                    "Password recovery will be available after the secure account backend is connected.",
-                    "info"
-                );
-
-            }
-        );
-    }
-}
-
-
-/* =========================================================
-   SECURITY GATE
-   ========================================================= */
-
-function enforceAuthenticationGate() {
-
-    /*
-     * ALWAYS start with the dashboard hidden.
-     */
-
-    hideElement($("appScreen"));
-
-
-    /*
-     * If authenticated, unlock dashboard.
-     */
-
-    if (getAuthSession()) {
-
-        showAppScreen();
-
-        return;
-    }
-
-
-    /*
-     * Otherwise show login/register only.
-     */
-
-    showAuthScreen();
-}
-
-
-/* =========================================================
-   APPLICATION STARTUP
-   ========================================================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        /*
-         * Set current year.
-         */
-
-        const authYear =
-            $("authYear");
-
-        if (authYear) {
-
-            authYear.textContent =
-                new Date().getFullYear();
-        }
-
-
-        /*
-         * Set up login/register buttons.
-         */
-
-        setupAuthentication();
-
-
-        /*
-         * LOCK DASHBOARD FIRST.
-         *
-         * This is deliberately the final startup step so
-         * unauthenticated visitors never get access to the
-         * customer dashboard.
-         */
-
-        enforceAuthenticationGate();
-
-    }
-);
-
-
-/* =========================================================
-   GLOBAL ACCESS
-   ========================================================= */
-
-window.GDSVERIFY = GDSVERIFY;
-
-window.logoutUser =
-    logoutUser;
-
-window.showLoginView =
-    showLoginView;
-
-window.showRegisterView =
-    showRegisterView;
-
-window.togglePassword =
-    togglePassword;
-
-/* =========================================================
-   GDSVERIFY.COM
-   APP.JS — PART 2
-   CUSTOMER DASHBOARD + NAVIGATION
-   ========================================================= */
-
-
-/* =========================================================
-   DASHBOARD NAVIGATION
-   ========================================================= */
-
-function showSection(sectionName) {
-
-    /*
-     * Security check:
-     * Never allow dashboard sections when logged out.
-     */
-    if (!getAuthSession()) {
-        showAuthScreen();
-        return;
-    }
-
-    const sections = [
-        "homeSection",
-        "servicesSection",
-        "ordersSection",
-        "profileSection"
-    ];
-
-    sections.forEach(function (id) {
-
-        const section = $(id);
-
-        if (section) {
-            hideElement(section);
-        }
-    });
-
-
-    const selectedSection =
-        $(sectionName + "Section");
-
-    if (selectedSection) {
-        showElement(selectedSection);
-    }
-
-
-    /*
-     * Update bottom navigation.
-     */
-    const navButtons =
-        document.querySelectorAll(
-            "[data-nav]"
-        );
-
-    navButtons.forEach(function (button) {
-
-        button.classList.remove("active");
-
-        if (
-            button.getAttribute("data-nav") ===
-            sectionName
-        ) {
-            button.classList.add("active");
-        }
-    });
-
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-
-/* =========================================================
-   NAVIGATION BUTTONS
-   ========================================================= */
-
-function setupNavigation() {
-
-    const navButtons =
-        document.querySelectorAll(
-            "[data-nav]"
-        );
-
-    navButtons.forEach(function (button) {
-
-        button.addEventListener(
-            "click",
-            function () {
-
-                const section =
-                    button.getAttribute(
-                        "data-nav"
-                    );
-
-                if (section) {
-                    showSection(section);
-                }
-            }
-        );
-    });
-
-
-    /*
-     * Service cards.
-     */
-
-    const serviceCards =
-        document.querySelectorAll(
-            "[data-service]"
-        );
-
-    serviceCards.forEach(function (card) {
-
-        card.addEventListener(
-            "click",
-            function () {
-
-                const service =
-                    card.getAttribute(
-                        "data-service"
-                    );
-
-                handleServiceSelection(
-                    service
-                );
-            }
-        );
-    });
-}
-
-
-/* =========================================================
-   SERVICE SELECTION
-   ========================================================= */
-
-function handleServiceSelection(service) {
-
-    if (!getAuthSession()) {
-
-        showAuthScreen();
-
-        return;
-    }
-
-
-    switch (service) {
-
-        case "numbers":
-
-            openVirtualNumbers();
-
-            break;
-
-
-        case "airtime":
-
-            openAirtimeService();
-
-            break;
-
-
-        case "data":
-
-            openDataService();
-
-            break;
-
-
-        case "boost":
-
-            openSocialBoostService();
-
-            break;
-
-
-        default:
-
-            console.warn(
-                "Unknown service:",
-                service
-            );
-    }
-}
-
-
-/* =========================================================
-   VIRTUAL NUMBERS
-   ========================================================= */
-
-function openVirtualNumbers() {
-
-    /*
-     * If the virtual numbers modal already exists in the
-     * HTML, display it.
-     */
-
-    const modal =
-        $("virtualNumbersModal");
-
-    if (modal) {
-
-        showElement(modal);
-
-        loadCountries();
-
-        return;
-    }
-
-
-    /*
-     * Otherwise use the services section.
-     */
-
-    showSection("services");
-
-    loadCountries();
-}
-
-
-/* =========================================================
-   AIRTIME
-   ========================================================= */
-
-function openAirtimeService() {
-
-    showSection("services");
-
-    const message =
-        $("serviceMessage");
-
-    if (message) {
-
-        message.textContent =
-            "Airtime purchase will be available here.";
-
-        showElement(message);
-    }
-}
-
-
-/* =========================================================
-   DATA
-   ========================================================= */
-
-function openDataService() {
-
-    showSection("services");
-
-    const message =
-        $("serviceMessage");
-
-    if (message) {
-
-        message.textContent =
-            "Data bundle purchase will be available here.";
-
-        showElement(message);
-    }
-}
-
-
-/* =========================================================
-   SOCIAL BOOST
-   ========================================================= */
-
-function openSocialBoostService() {
-
-    showSection("services");
-
-    const message =
-        $("serviceMessage");
-
-    if (message) {
-
-        message.textContent =
-            "Social media boost services will be available here.";
-
-        showElement(message);
-    }
-}
-
-
-/* =========================================================
-   COUNTRY NORMALIZATION
-   ========================================================= */
-
-function normalizeCountry(country) {
-
-    if (!country) {
-        return null;
-    }
-
-
-    if (typeof country === "string") {
-
-        return {
-            code: country,
-            name: country,
-            slug: country.toLowerCase()
-        };
-    }
-
-
-    return {
-
-        code:
-            country.code ||
-            country.iso ||
-            country.country ||
-            "",
-
-        name:
-            country.name ||
-            country.title ||
-            country.country ||
-            country.code ||
-            "",
-
-        slug:
-            country.slug ||
-            country.code ||
-            country.country ||
-            ""
-    };
-}
-
-
-/* =========================================================
-   SERVICE NORMALIZATION
-   ========================================================= */
-
-function normalizeService(service) {
-
-    if (!service) {
-        return null;
-    }
-
-
-    if (typeof service === "string") {
-
-        return {
-
-            code: service,
-
-            name: service
-        };
-    }
-
-
-    return {
-
-        code:
-            service.code ||
-            service.slug ||
-            service.service ||
-            service.name ||
-            "",
-
-        name:
-            service.name ||
-            service.title ||
-            service.service ||
-            service.code ||
-            ""
-    };
-}
-
-
-/* =========================================================
-   COUNTRY LABEL
-   ========================================================= */
-
-function countryLabel(country) {
-
-    const normalized =
-        normalizeCountry(country);
-
-    if (!normalized) {
-        return "";
-    }
-
-    return (
-        normalized.name ||
-        normalized.code
-    );
-}
-
-
-/* =========================================================
-   SERVICE LABEL
-   ========================================================= */
-
-function serviceLabel(service) {
-
-    const normalized =
-        normalizeService(service);
-
-    if (!normalized) {
-        return "";
-    }
-
-    return (
-        normalized.name ||
-        normalized.code
-    );
-}
-
-
-/* =========================================================
-   HTML ESCAPING
-   ========================================================= */
-
 function escapeHtml(value) {
-
-    if (value === null ||
-        value === undefined) {
-
-        return "";
-    }
-
-    return String(value)
+    return String(value ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -1471,367 +53,992 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
+function showMessage(message, type = "info") {
+    const box = $("authMessage");
+
+    if (!box) {
+        alert(message);
+        return;
+    }
+
+    box.textContent = message;
+    box.className = "auth-message " + type;
+    show(box);
+}
+
+function getStoredUser() {
+    try {
+        const data = localStorage.getItem(GDSVERIFY.storage.user);
+
+        if (!data) {
+            return null;
+        }
+
+        return JSON.parse(data);
+    } catch (error) {
+        console.error("Unable to read stored user:", error);
+        return null;
+    }
+}
+
+function saveUser(user) {
+    localStorage.setItem(
+        GDSVERIFY.storage.user,
+        JSON.stringify(user)
+    );
+}
+
+function clearUser() {
+    localStorage.removeItem(GDSVERIFY.storage.user);
+    localStorage.removeItem(GDSVERIFY.storage.token);
+}
+
 
 /* =========================================================
    API REQUEST HELPER
    ========================================================= */
 
-async function apiRequest(
-    url,
-    options = {}
-) {
+async function apiRequest(url, options = {}) {
+    const config = {
+        method: options.method || "GET",
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        }
+    };
+
+    const token = localStorage.getItem(GDSVERIFY.storage.token);
+
+    if (token) {
+        config.headers.Authorization = "Bearer " + token;
+    }
+
+    if (options.body !== undefined) {
+        config.body =
+            typeof options.body === "string"
+                ? options.body
+                : JSON.stringify(options.body);
+    }
+
+    const response = await fetch(url, config);
+
+    let data;
 
     try {
+        data = await response.json();
+    } catch (error) {
+        data = {
+            success: false,
+            message: "The server returned an invalid response."
+        };
+    }
 
-        const response =
-            await fetch(
-                url,
-                {
-                    credentials: "include",
-                    ...options
-                }
-            );
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+            data.error ||
+            "Request failed."
+        );
+    }
+
+    return data;
+}
 
 
-        const contentType =
-            response.headers.get(
-                "content-type"
-            ) || "";
+/* =========================================================
+   AUTHENTICATION
+   ========================================================= */
 
+async function loginUser(email, password) {
+    if (!email || !password) {
+        throw new Error("Please enter your email and password.");
+    }
 
-        let data;
-
-
-        if (
-            contentType.includes(
-                "application/json"
-            )
-        ) {
-
-            data =
-                await response.json();
-
-        } else {
-
-            const text =
-                await response.text();
-
-            try {
-
-                data =
-                    JSON.parse(text);
-
-            } catch {
-
-                data = {
-                    success:
-                        response.ok,
-
-                    message:
-                        text
-                };
+    const result = await apiRequest(
+        GDSVERIFY.api.auth,
+        {
+            method: "POST",
+            body: {
+                action: "login",
+                email: email.trim().toLowerCase(),
+                password: password
             }
         }
+    );
 
+    if (result.user) {
+        saveUser(result.user);
+    }
 
-        if (!response.ok) {
-
-            throw new Error(
-                data.message ||
-                "Request failed."
-            );
-        }
-
-
-        return data;
-
-    } catch (error) {
-
-        console.error(
-            "API request error:",
-            error
+    if (result.token) {
+        localStorage.setItem(
+            GDSVERIFY.storage.token,
+            result.token
         );
+    }
 
-        throw error;
+    return result;
+}
+
+
+async function registerUser(formData) {
+    const result = await apiRequest(
+        GDSVERIFY.api.auth,
+        {
+            method: "POST",
+            body: {
+                action: "register",
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email.trim().toLowerCase(),
+                phone: formData.phone,
+                password: formData.password
+            }
+        }
+    );
+
+    if (result.user) {
+        saveUser(result.user);
+    }
+
+    if (result.token) {
+        localStorage.setItem(
+            GDSVERIFY.storage.token,
+            result.token
+        );
+    }
+
+    return result;
+}
+
+
+function logoutUser() {
+    clearUser();
+
+    window.location.reload();
+}
+
+
+/* =========================================================
+   AUTH SCREEN CONTROL
+   ========================================================= */
+
+function showLoginView() {
+    const loginView = $("loginView");
+    const registerView = $("registerView");
+
+    show(loginView);
+    hide(registerView);
+
+    const message = $("authMessage");
+
+    if (message) {
+        hide(message);
+    }
+}
+
+
+function showRegisterView() {
+    const loginView = $("loginView");
+    const registerView = $("registerView");
+
+    hide(loginView);
+    show(registerView);
+
+    const message = $("authMessage");
+
+    if (message) {
+        hide(message);
+    }
+}
+
+
+function initializeAuthentication() {
+
+    const loginForm = $("loginForm");
+    const registerForm = $("registerForm");
+
+    const showRegisterButton = $("showRegisterBtn");
+    const showLoginButton = $("showLoginBtn");
+
+    if (showRegisterButton) {
+        showRegisterButton.addEventListener(
+            "click",
+            function () {
+                showRegisterView();
+            }
+        );
+    }
+
+    if (showLoginButton) {
+        showLoginButton.addEventListener(
+            "click",
+            function () {
+                showLoginView();
+            }
+        );
+    }
+
+
+    /* -----------------------------------------------------
+       LOGIN
+       ----------------------------------------------------- */
+
+    if (loginForm) {
+
+        loginForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+                const emailInput = $("loginEmail");
+                const passwordInput = $("loginPassword");
+
+                const email =
+                    emailInput ? emailInput.value.trim() : "";
+
+                const password =
+                    passwordInput ? passwordInput.value : "";
+
+                if (!email || !password) {
+                    showMessage(
+                        "Please enter your email and password.",
+                        "error"
+                    );
+                    return;
+                }
+
+                const submitButton =
+                    loginForm.querySelector(
+                        'button[type="submit"]'
+                    );
+
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.textContent = "Signing in...";
+                }
+
+                try {
+
+                    const result =
+                        await loginUser(email, password);
+
+                    showMessage(
+                        result.message ||
+                        "Login successful.",
+                        "success"
+                    );
+
+                    setTimeout(
+                        function () {
+                            openDashboard();
+                        },
+                        500
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Login error:",
+                        error
+                    );
+
+                    showMessage(
+                        error.message ||
+                        "Unable to sign in.",
+                        "error"
+                    );
+
+                } finally {
+
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = "Login";
+                    }
+                }
+            }
+        );
+    }
+
+
+    /* -----------------------------------------------------
+       REGISTRATION
+       ----------------------------------------------------- */
+
+    if (registerForm) {
+
+        registerForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+                const firstName =
+                    $("registerFirstName")?.value.trim() || "";
+
+                const lastName =
+                    $("registerLastName")?.value.trim() || "";
+
+                const email =
+                    $("registerEmail")?.value.trim() || "";
+
+                const phone =
+                    $("registerPhone")?.value.trim() || "";
+
+                const password =
+                    $("registerPassword")?.value || "";
+
+                const confirmPassword =
+                    $("registerConfirmPassword")?.value || "";
+
+                const terms =
+                    $("acceptTerms");
+
+                if (
+                    !firstName ||
+                    !lastName ||
+                    !email ||
+                    !phone ||
+                    !password ||
+                    !confirmPassword
+                ) {
+                    showMessage(
+                        "Please complete all required fields.",
+                        "error"
+                    );
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showMessage(
+                        "Password must contain at least 6 characters.",
+                        "error"
+                    );
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showMessage(
+                        "Passwords do not match.",
+                        "error"
+                    );
+                    return;
+                }
+
+                if (terms && !terms.checked) {
+                    showMessage(
+                        "Please accept the terms and conditions.",
+                        "error"
+                    );
+                    return;
+                }
+
+                const submitButton =
+                    registerForm.querySelector(
+                        'button[type="submit"]'
+                    );
+
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.textContent = "Creating account...";
+                }
+
+                try {
+
+                    const result =
+                        await registerUser({
+                            firstName,
+                            lastName,
+                            email,
+                            phone,
+                            password
+                        });
+
+                    showMessage(
+                        result.message ||
+                        "Account created successfully.",
+                        "success"
+                    );
+
+                    setTimeout(
+                        function () {
+                            openDashboard();
+                        },
+                        500
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Registration error:",
+                        error
+                    );
+
+                    showMessage(
+                        error.message ||
+                        "Unable to create your account.",
+                        "error"
+                    );
+
+                } finally {
+
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent =
+                            "Create Account";
+                    }
+                }
+            }
+        );
     }
 }
 
 
 /* =========================================================
-   LOAD COUNTRIES
+   DASHBOARD AUTH GATE
    ========================================================= */
 
-async function loadCountries() {
+function openDashboard() {
 
-    if (!getAuthSession()) {
+    const authScreen = $("authScreen");
+    const appScreen = $("appScreen");
+
+    hide(authScreen);
+    show(appScreen);
+
+    initializeCustomerDashboard();
+}
+
+
+function openAuthentication() {
+
+    const authScreen = $("authScreen");
+    const appScreen = $("appScreen");
+
+    show(authScreen);
+    hide(appScreen);
+
+    showLoginView();
+}
+
+
+function checkAuthentication() {
+
+    const user = getStoredUser();
+
+    if (user) {
+        openDashboard();
+    } else {
+        openAuthentication();
+    }
+}
+
+
+/* =========================================================
+   PASSWORD TOGGLE
+   ========================================================= */
+
+function togglePassword(inputId, button) {
+
+    const input = $(inputId);
+
+    if (!input) {
         return;
     }
 
+    if (input.type === "password") {
+        input.type = "text";
+
+        if (button) {
+            button.textContent = "🙈";
+        }
+
+    } else {
+
+        input.type = "password";
+
+        if (button) {
+            button.textContent = "👁";
+        }
+    }
+}
+
+
+/* =========================================================
+   FORGOT PASSWORD
+   ========================================================= */
+
+function initializeForgotPassword() {
+
+    const button = $("forgotPasswordBtn");
+
+    if (!button) {
+        return;
+    }
+
+    button.addEventListener(
+        "click",
+        function () {
+
+            alert(
+                "Password recovery will be connected to the secure GDSVERIFY backend."
+            );
+
+        }
+    );
+}
+
+
+/* =========================================================
+   PAGE INITIALIZATION
+   ========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        console.log(
+            "GDSVERIFY application starting..."
+        );
+
+        const yearElements = [
+            $("authYear"),
+            $("footerYear")
+        ];
+
+        const currentYear =
+            new Date().getFullYear();
+
+        yearElements.forEach(
+            function (element) {
+
+                if (element) {
+                    element.textContent =
+                        currentYear;
+                }
+
+            }
+        );
+
+        initializeAuthentication();
+
+        initializeForgotPassword();
+
+        checkAuthentication();
+
+    }
+);/* =========================================================
+   GDSVERIFY.COM
+   CUSTOMER APPLICATION JAVASCRIPT
+   PART 2 — DASHBOARD / COUNTRIES / SERVICES / WALLET
+   ========================================================= */
+
+
+/* =========================================================
+   DASHBOARD NAVIGATION
+   ========================================================= */
+
+function initializeCustomerDashboard() {
+
+    initializeNavigation();
+    initializeServiceCards();
+    initializeWallet();
+    initializeProfile();
+    initializeNotifications();
+    initializeSupport();
+
+    loadCountries();
+    loadServices();
+
+    updateDashboardUser();
+    updateWalletBalance();
+    loadRecentOrders();
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function initializeNavigation() {
+
+    const navButtons =
+        document.querySelectorAll("[data-section]");
+
+    navButtons.forEach(function (button) {
+
+        button.addEventListener(
+            "click",
+            function () {
+
+                const sectionName =
+                    button.getAttribute("data-section");
+
+                if (sectionName) {
+                    showSection(sectionName);
+                }
+
+            }
+        );
+
+    });
+
+}
+
+
+function showSection(sectionName) {
+
+    const sections = [
+        "home",
+        "services",
+        "orders",
+        "profile"
+    ];
+
+    sections.forEach(function (name) {
+
+        const section =
+            $(name + "Section");
+
+        if (!section) {
+            return;
+        }
+
+        if (name === sectionName) {
+            show(section);
+        } else {
+            hide(section);
+        }
+
+    });
+
+
+    const navItems =
+        document.querySelectorAll(
+            "[data-section]"
+        );
+
+    navItems.forEach(function (item) {
+
+        if (
+            item.getAttribute("data-section") ===
+            sectionName
+        ) {
+            item.classList.add("active");
+        } else {
+            item.classList.remove("active");
+        }
+
+    });
+
+}
+
+
+/* =========================================================
+   SERVICE CARDS
+   ========================================================= */
+
+function initializeServiceCards() {
+
+    const cards =
+        document.querySelectorAll(
+            "[data-service]"
+        );
+
+    cards.forEach(function (card) {
+
+        card.addEventListener(
+            "click",
+            function () {
+
+                const service =
+                    card.getAttribute("data-service");
+
+                switch (service) {
+
+                    case "numbers":
+                        openVirtualNumbers();
+                        break;
+
+                    case "airtime":
+                        showSection("home");
+                        alert(
+                            "Airtime services are being connected."
+                        );
+                        break;
+
+                    case "data":
+                        showSection("home");
+                        alert(
+                            "Data services are being connected."
+                        );
+                        break;
+
+                    case "boost":
+                        showSection("home");
+                        alert(
+                            "Social media services are being connected."
+                        );
+                        break;
+
+                    default:
+                        console.log(
+                            "Unknown service:",
+                            service
+                        );
+                }
+
+            }
+        );
+
+    });
+
+}
+
+
+/* =========================================================
+   COUNTRIES
+   ========================================================= */
+
+let gdsCountries = [];
+
+
+async function loadCountries() {
+
+    try {
+
+        const result =
+            await apiRequest(
+                GDSVERIFY.api.countries
+            );
+
+        let countries = [];
+
+        if (Array.isArray(result)) {
+            countries = result;
+        } else if (Array.isArray(result.countries)) {
+            countries = result.countries;
+        } else if (result.data && Array.isArray(result.data)) {
+            countries = result.data;
+        } else if (
+            result.data &&
+            Array.isArray(result.data.countries)
+        ) {
+            countries = result.data.countries;
+        }
+
+        gdsCountries = countries;
+
+        populateCountrySelect();
+
+        console.log(
+            "Countries loaded:",
+            countries.length
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Country loading error:",
+            error
+        );
+
+    }
+
+}
+
+
+function populateCountrySelect() {
+
+    const select =
+        $("countrySelect");
+
+    if (!select) {
+        return;
+    }
+
+    select.innerHTML =
+        '<option value="">Select country</option>';
+
+    gdsCountries.forEach(function (country) {
+
+        let code =
+            country.iso ||
+            country.code ||
+            country.country ||
+            "";
+
+        let name =
+            country.name ||
+            country.title ||
+            country.country ||
+            code;
+
+        code = String(code).trim();
+        name = String(name).trim();
+
+        if (!code) {
+            return;
+        }
+
+        const option =
+            document.createElement("option");
+
+        option.value = code;
+        option.textContent =
+            name + " (" + code + ")";
+
+        select.appendChild(option);
+
+    });
+
+}
+
+
+/* =========================================================
+   SERVICES
+   ========================================================= */
+
+let gdsServices = [];
+
+
+async function loadServices(country = "") {
+
+    try {
+
+        let url =
+            GDSVERIFY.api.services;
+
+        if (country) {
+            url +=
+                "?country=" +
+                encodeURIComponent(country);
+        }
+
+        const result =
+            await apiRequest(url);
+
+        let services = [];
+
+        if (Array.isArray(result)) {
+            services = result;
+        } else if (Array.isArray(result.services)) {
+            services = result.services;
+        } else if (result.data && Array.isArray(result.data)) {
+            services = result.data;
+        } else if (
+            result.data &&
+            Array.isArray(result.data.services)
+        ) {
+            services = result.data.services;
+        }
+
+        gdsServices = services;
+
+        populateServiceSelect();
+
+        console.log(
+            "Services loaded:",
+            services.length
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Service loading error:",
+            error
+        );
+
+    }
+
+}
+
+
+function populateServiceSelect() {
+
+    const select =
+        $("serviceSelect");
+
+    if (!select) {
+        return;
+    }
+
+    select.innerHTML =
+        '<option value="">Select service</option>';
+
+    gdsServices.forEach(function (service) {
+
+        let code =
+            service.code ||
+            service.slug ||
+            service.service ||
+            service.name ||
+            "";
+
+        let name =
+            service.name ||
+            service.title ||
+            service.service ||
+            code;
+
+        code = String(code).trim();
+        name = String(name).trim();
+
+        if (!code) {
+            return;
+        }
+
+        const option =
+            document.createElement("option");
+
+        option.value = code;
+        option.textContent = name;
+
+        select.appendChild(option);
+
+    });
+
+}
+
+
+/* =========================================================
+   COUNTRY → SERVICE
+   ========================================================= */
+
+function initializeCountryServiceSelector() {
 
     const countrySelect =
         $("countrySelect");
-
 
     if (!countrySelect) {
         return;
     }
 
+    countrySelect.addEventListener(
+        "change",
+        function () {
 
-    countrySelect.innerHTML =
-        '<option value="">Loading countries...</option>';
+            const country =
+                countrySelect.value;
 
-    countrySelect.disabled = true;
+            if (!country) {
+                const serviceSelect =
+                    $("serviceSelect");
 
-
-    try {
-
-        const data =
-            await apiRequest(
-                GDSVERIFY.api.countries
-            );
-
-
-        let countries =
-            data.countries ||
-            data.data ||
-            data.results ||
-            [];
-
-
-        if (!Array.isArray(countries)) {
-
-            countries =
-                Object.entries(
-                    countries
-                ).map(function (
-                    entry
-                ) {
-
-                    return {
-                        code: entry[0],
-                        name: entry[1]
-                    };
-                });
-        }
-
-
-        countrySelect.innerHTML =
-            '<option value="">Select country</option>';
-
-
-        countries.forEach(
-            function (country) {
-
-                const normalized =
-                    normalizeCountry(
-                        country
-                    );
-
-
-                if (
-                    !normalized ||
-                    !normalized.code
-                ) {
-                    return;
+                if (serviceSelect) {
+                    serviceSelect.innerHTML =
+                        '<option value="">Select service</option>';
                 }
 
-
-                const option =
-                    document.createElement(
-                        "option"
-                    );
-
-
-                option.value =
-                    normalized.code;
-
-                option.textContent =
-                    countryLabel(
-                        normalized
-                    );
-
-
-                countrySelect.appendChild(
-                    option
-                );
+                return;
             }
-        );
 
+            loadServices(country);
 
-        countrySelect.disabled = false;
-
-    } catch (error) {
-
-        countrySelect.innerHTML =
-            '<option value="">Unable to load countries</option>';
-
-        countrySelect.disabled = false;
-
-        console.error(
-            "Country loading failed:",
-            error
-        );
-    }
-}
-
-
-/* =========================================================
-   LOAD SERVICES
-   ========================================================= */
-
-async function loadServices(country) {
-
-    if (!getAuthSession()) {
-        return;
-    }
-
-
-    const serviceSelect =
-        $("serviceSelect");
-
-
-    if (!serviceSelect) {
-        return;
-    }
-
-
-    if (!country) {
-
-        serviceSelect.innerHTML =
-            '<option value="">Select country first</option>';
-
-        serviceSelect.disabled = true;
-
-        return;
-    }
-
-
-    serviceSelect.innerHTML =
-        '<option value="">Loading services...</option>';
-
-    serviceSelect.disabled = true;
-
-
-    try {
-
-        const url =
-            GDSVERIFY.api.services +
-            "&country=" +
-            encodeURIComponent(
-                country
-            );
-
-
-        const data =
-            await apiRequest(url);
-
-
-        let services =
-            data.services ||
-            data.data ||
-            data.results ||
-            [];
-
-
-        if (!Array.isArray(services)) {
-
-            services =
-                Object.entries(
-                    services
-                ).map(function (
-                    entry
-                ) {
-
-                    return {
-                        code: entry[0],
-                        name: entry[1]
-                    };
-                });
         }
+    );
 
-
-        serviceSelect.innerHTML =
-            '<option value="">Select service</option>';
-
-
-        services.forEach(
-            function (service) {
-
-                const normalized =
-                    normalizeService(
-                        service
-                    );
-
-
-                if (
-                    !normalized ||
-                    !normalized.code
-                ) {
-                    return;
-                }
-
-
-                const option =
-                    document.createElement(
-                        "option"
-                    );
-
-
-                option.value =
-                    normalized.code;
-
-                option.textContent =
-                    serviceLabel(
-                        normalized
-                    );
-
-
-                serviceSelect.appendChild(
-                    option
-                );
-            }
-        );
-
-
-        serviceSelect.disabled = false;
-
-    } catch (error) {
-
-        serviceSelect.innerHTML =
-            '<option value="">Unable to load services</option>';
-
-        serviceSelect.disabled = false;
-
-        console.error(
-            "Service loading failed:",
-            error
-        );
-    }
-}
-
-
-/* =========================================================
-   COUNTRY CHANGE
-   ========================================================= */
-
-function setupCountryServiceSelectors() {
-
-    const countrySelect =
-        $("countrySelect");
-
-
-    if (countrySelect) {
-
-        countrySelect.addEventListener(
-            "change",
-            function () {
-
-                loadServices(
-                    countrySelect.value
-                );
-            }
-        );
-    }
 }
 
 
@@ -1839,59 +1046,104 @@ function setupCountryServiceSelectors() {
    WALLET
    ========================================================= */
 
-function getWalletBalance() {
+let gdsWalletBalance = 0;
 
-    try {
 
-        const balance =
-            localStorage.getItem(
-                "gdsverify_wallet_balance"
-            );
+function initializeWallet() {
 
-        return parseFloat(balance) || 0;
+    const fundButton =
+        $("fundWalletBtn");
 
-    } catch {
+    if (fundButton) {
 
-        return 0;
+        fundButton.addEventListener(
+            "click",
+            function () {
+
+                openWalletFunding();
+
+            }
+        );
+
     }
+
 }
 
 
-function setWalletBalance(amount) {
-
-    const numericAmount =
-        Number(amount) || 0;
-
+async function updateWalletBalance() {
 
     try {
 
-        localStorage.setItem(
-            "gdsverify_wallet_balance",
-            numericAmount.toFixed(2)
-        );
+        const result =
+            await apiRequest(
+                GDSVERIFY.api.wallet +
+                "?action=balance"
+            );
+
+        if (
+            result &&
+            typeof result.balance !== "undefined"
+        ) {
+
+            gdsWalletBalance =
+                Number(result.balance) || 0;
+
+        } else if (
+            result &&
+            result.data &&
+            typeof result.data.balance !== "undefined"
+        ) {
+
+            gdsWalletBalance =
+                Number(result.data.balance) || 0;
+
+        }
 
     } catch (error) {
 
-        console.error(
-            "Unable to save wallet balance:",
+        console.warn(
+            "Wallet balance could not be loaded:",
             error
         );
+
     }
 
+    renderWalletBalance();
 
-    updateWalletDisplay();
 }
 
 
-function updateWalletDisplay() {
+function renderWalletBalance() {
 
-    const balance =
-        getWalletBalance();
+    const possibleIds = [
+        "walletBalance",
+        "balance",
+        "homeWalletBalance"
+    ];
+
+    possibleIds.forEach(function (id) {
+
+        const element = $(id);
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent =
+            formatNGN(gdsWalletBalance);
+
+    });
+
+}
 
 
-    const formatted =
-        "₦" +
-        balance.toLocaleString(
+function formatNGN(amount) {
+
+    const number =
+        Number(amount) || 0;
+
+    return "₦" +
+        number.toLocaleString(
             "en-NG",
             {
                 minimumFractionDigits: 2,
@@ -1899,68 +1151,28 @@ function updateWalletDisplay() {
             }
         );
 
-
-    const elements =
-        document.querySelectorAll(
-            "[data-wallet-balance]"
-        );
-
-
-    elements.forEach(
-        function (element) {
-
-            element.textContent =
-                formatted;
-        }
-    );
-
-
-    const walletBalance =
-        $("walletBalance");
-
-    if (walletBalance) {
-
-        walletBalance.textContent =
-            formatted;
-    }
 }
 
 
-/* =========================================================
-   FUND WALLET
-   ========================================================= */
-
-function fundWallet() {
-
-    if (!getAuthSession()) {
-
-        showAuthScreen();
-
-        return;
-    }
-
+function openWalletFunding() {
 
     const amount =
         prompt(
-            "Enter the amount you want to fund in NGN:"
+            "Enter the amount you want to fund your wallet (NGN):"
         );
-
 
     if (amount === null) {
         return;
     }
 
+    const value =
+        Number(
+            String(amount)
+                .replace(/,/g, "")
+                .trim()
+        );
 
-    const numericAmount =
-        parseFloat(amount);
-
-
-    if (
-        !Number.isFinite(
-            numericAmount
-        ) ||
-        numericAmount <= 0
-    ) {
+    if (!Number.isFinite(value) || value <= 0) {
 
         alert(
             "Please enter a valid amount."
@@ -1969,110 +1181,135 @@ function fundWallet() {
         return;
     }
 
+    createDeposit(value);
 
-    /*
-     * This is a temporary frontend wallet action.
-     *
-     * Real Flutterwave/payment processing will be connected
-     * through the secure backend later.
-     */
-
-    const currentBalance =
-        getWalletBalance();
-
-
-    setWalletBalance(
-        currentBalance +
-        numericAmount
-    );
-
-
-    alert(
-        "Wallet updated for testing. Real payment processing will be connected later."
-    );
 }
 
 
-/* =========================================================
-   ORDERS
-   ========================================================= */
-
-function loadRecentOrders() {
-
-    const container =
-        $("recentOrders");
-
-
-    if (!container) {
-        return;
-    }
-
+async function createDeposit(amount) {
 
     try {
 
-        const orders =
-            JSON.parse(
-                localStorage.getItem(
-                    "gdsverify_orders"
-                ) || "[]"
+        const result =
+            await apiRequest(
+                GDSVERIFY.api.wallet,
+                {
+                    method: "POST",
+                    body: {
+                        action: "deposit",
+                        amount: amount
+                    }
+                }
             );
 
-
         if (
-            !Array.isArray(orders) ||
-            orders.length === 0
+            result.paymentUrl ||
+            result.payment_url
         ) {
 
-            container.innerHTML =
-                '<div class="empty-state">No recent orders yet.</div>';
+            window.location.href =
+                result.paymentUrl ||
+                result.payment_url;
 
             return;
         }
 
-
-        container.innerHTML =
-            orders
-                .slice(0, 5)
-                .map(function (order) {
-
-                    return `
-                        <div class="order-item">
-                            <div>
-                                <strong>
-                                    ${escapeHtml(
-                                        order.service ||
-                                        "Verification"
-                                    )}
-                                </strong>
-
-                                <small>
-                                    ${escapeHtml(
-                                        order.status ||
-                                        "Pending"
-                                    )}
-                                </small>
-                            </div>
-
-                            <strong>
-                                ₦${Number(
-                                    order.amount || 0
-                                ).toLocaleString(
-                                    "en-NG"
-                                )}
-                            </strong>
-                        </div>
-                    `;
-
-                })
-                .join("");
+        alert(
+            result.message ||
+            "Your wallet funding request has been received."
+        );
 
     } catch (error) {
 
         console.error(
-            "Unable to load orders:",
+            "Deposit error:",
             error
         );
+
+        alert(
+            error.message ||
+            "Unable to create wallet funding request."
+        );
+
     }
+
+}
+
+
+/* =========================================================
+   USER INFORMATION
+   ========================================================= */
+
+function updateDashboardUser() {
+
+    const user =
+        getStoredUser();
+
+    if (!user) {
+        return;
+    }
+
+    const fullName =
+        [
+            user.firstName,
+            user.lastName
+        ]
+        .filter(Boolean)
+        .join(" ") ||
+        user.name ||
+        "GDSVERIFY User";
+
+    const nameElements = [
+        "userName",
+        "profileName",
+        "welcomeName"
+    ];
+
+    nameElements.forEach(function (id) {
+
+        const element = $(id);
+
+        if (element) {
+            element.textContent =
+                fullName;
+        }
+
+    });
+
+
+    const emailElements = [
+        "profileEmail",
+        "userEmail"
+    ];
+
+    emailElements.forEach(function (id) {
+
+        const element = $(id);
+
+        if (element) {
+            element.textContent =
+                user.email || "";
+        }
+
+    });
+
+
+    const phoneElements = [
+        "profilePhone",
+        "userPhone"
+    ];
+
+    phoneElements.forEach(function (id) {
+
+        const element = $(id);
+
+        if (element) {
+            element.textContent =
+                user.phone || "";
+        }
+
+    });
+
 }
 
 
@@ -2080,69 +1317,48 @@ function loadRecentOrders() {
    PROFILE
    ========================================================= */
 
-function updateProfileDisplay() {
+function initializeProfile() {
 
-    const user =
-        getStoredUser();
+    const profileButton =
+        $("profileBtn");
 
+    if (profileButton) {
 
-    if (!user) {
-        return;
+        profileButton.addEventListener(
+            "click",
+            function () {
+
+                showSection("profile");
+
+            }
+        );
+
     }
 
 
-    const fullName =
-        (
-            (user.firstName || "") +
-            " " +
-            (user.lastName || "")
-        ).trim();
+    const logoutButton =
+        $("logoutBtn");
 
+    if (logoutButton) {
 
-    const nameElements =
-        document.querySelectorAll(
-            "[data-user-name]"
+        logoutButton.addEventListener(
+            "click",
+            function () {
+
+                const confirmed =
+                    confirm(
+                        "Are you sure you want to log out?"
+                    );
+
+                if (confirmed) {
+                    logoutUser();
+                }
+
+            }
         );
 
+    }
 
-    nameElements.forEach(
-        function (element) {
-
-            element.textContent =
-                fullName ||
-                "GDSVERIFY Customer";
-        }
-    );
-
-
-    const emailElements =
-        document.querySelectorAll(
-            "[data-user-email]"
-        );
-
-
-    emailElements.forEach(
-        function (element) {
-
-            element.textContent =
-                user.email || "";
-        }
-    );
-
-
-    const phoneElements =
-        document.querySelectorAll(
-            "[data-user-phone]"
-        );
-
-
-    phoneElements.forEach(
-        function (element) {
-
-            element.textContent =
-                user.phone || "";
-        }
-    );
 }
 
 
@@ -2150,37 +1366,37 @@ function updateProfileDisplay() {
    NOTIFICATIONS
    ========================================================= */
 
-function openNotifications() {
+function initializeNotifications() {
 
-    if (!getAuthSession()) {
+    const button =
+        $("notificationBtn");
 
-        showAuthScreen();
-
+    if (!button) {
         return;
     }
 
+    button.addEventListener(
+        "click",
+        async function () {
 
-    alert(
-        "Your GDSVERIFY notifications will appear here."
+            try {
+
+                alert(
+                    "You have no new notifications."
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Notification error:",
+                    error
+                );
+
+            }
+
+        }
     );
-}
 
-
-/* =========================================================
-   PROFILE BUTTON
-   ========================================================= */
-
-function openProfile() {
-
-    if (!getAuthSession()) {
-
-        showAuthScreen();
-
-        return;
-    }
-
-
-    showSection("profile");
 }
 
 
@@ -2188,331 +1404,341 @@ function openProfile() {
    WHATSAPP SUPPORT
    ========================================================= */
 
-function openWhatsAppSupport() {
+function initializeSupport() {
 
-    if (!getAuthSession()) {
-
-        showAuthScreen();
-
-        return;
-    }
-
-
-    const phone =
-        "2348123608821";
-
-    const message =
-        "Hello GDSVERIFY Support, I need help with my account/service.";
-
-    const whatsappUrl =
-        "https://wa.me/" +
-        phone +
-        "?text=" +
-        encodeURIComponent(
-            message
-        );
-
-
-    window.location.href =
-        whatsappUrl;
-}
-
-
-/* =========================================================
-   GENERAL DASHBOARD BUTTONS
-   ========================================================= */
-
-function setupDashboardButtons() {
-
-    const fundWalletBtn =
-        $("fundWalletBtn");
-
-
-    if (fundWalletBtn) {
-
-        fundWalletBtn.addEventListener(
-            "click",
-            fundWallet
-        );
-    }
-
-
-    const notificationBtn =
-        $("notificationBtn");
-
-
-    if (notificationBtn) {
-
-        notificationBtn.addEventListener(
-            "click",
-            openNotifications
-        );
-    }
-
-
-    const profileBtn =
-        $("profileBtn");
-
-
-    if (profileBtn) {
-
-        profileBtn.addEventListener(
-            "click",
-            openProfile
-        );
-    }
-
-
-    const whatsappSupportBtn =
+    const button =
         $("whatsappSupportBtn");
 
-
-    if (whatsappSupportBtn) {
-
-        whatsappSupportBtn.addEventListener(
-            "click",
-            openWhatsAppSupport
-        );
-    }
-}
-
-
-/* =========================================================
-   DASHBOARD INITIALIZATION
-   ========================================================= */
-
-function initializeDashboardFeatures() {
-
-    if (!getAuthSession()) {
+    if (!button) {
         return;
     }
 
+    button.addEventListener(
+        "click",
+        function () {
 
-    setupNavigation();
-
-    setupCountryServiceSelectors();
-
-    setupDashboardButtons();
-
-    updateWalletDisplay();
-
-    updateProfileDisplay();
-
-    loadRecentOrders();
-}
-
-
-/* =========================================================
-   EXTEND DASHBOARD INITIALIZATION
-   ========================================================= */
-
-const originalInitializeCustomerDashboard =
-    initializeCustomerDashboard;
-
-
-initializeCustomerDashboard =
-    function () {
-
-        /*
-         * Run authentication-safe dashboard setup.
-         */
-
-        if (!getAuthSession()) {
-            return;
-        }
-
-
-        originalInitializeCustomerDashboard();
-
-
-        initializeDashboardFeatures();
-
-    };
-
-
-/* =========================================================
-   GLOBAL CUSTOMER FUNCTIONS
-   ========================================================= */
-
-window.showSection =
-    showSection;
-
-window.loadCountries =
-    loadCountries;
-
-window.loadServices =
-    loadServices;
-
-window.fundWallet =
-    fundWallet;
-
-window.openVirtualNumbers =
-    openVirtualNumbers;
-
-window.openWhatsAppSupport =
-    openWhatsAppSupport;
-
-window.openProfile =
-    openProfile;
-
-window.openNotifications =
-    openNotifications;
-
- /* =========================================================
-    GDSVERIFY.COM
-    APP.JS — PART 3
-    VIRTUAL NUMBERS + OTP PURCHASE + ORDERS
-    ========================================================= */
-
-
-/* =========================================================
-   MODAL HELPERS
-   ========================================================= */
-
-function closeModal(modalId) {
-
-    const modal = $(modalId);
-
-    if (modal) {
-        hideElement(modal);
-    }
-}
-
-
-function openModal(modalId) {
-
-    if (!getAuthSession()) {
-        showAuthScreen();
-        return;
-    }
-
-    const modal = $(modalId);
-
-    if (modal) {
-        showElement(modal);
-    }
-}
-
-
-/* =========================================================
-   VIRTUAL NUMBER FORM
-   ========================================================= */
-
-function setupVirtualNumberForm() {
-
-    const form = $("virtualNumberForm");
-
-    if (!form) {
-        return;
-    }
-
-
-    form.addEventListener(
-        "submit",
-        async function (event) {
-
-            event.preventDefault();
-
-            if (!getAuthSession()) {
-                showAuthScreen();
-                return;
-            }
-
-
-            const countrySelect =
-                $("countrySelect");
-
-            const serviceSelect =
-                $("serviceSelect");
-
-
-            const country =
-                countrySelect
-                    ? countrySelect.value
-                    : "";
-
-            const service =
-                serviceSelect
-                    ? serviceSelect.value
-                    : "";
-
-
-            if (!country) {
-
-                alert(
-                    "Please select a country."
+            const message =
+                encodeURIComponent(
+                    "Hello GDSVERIFY Support, I need assistance with my account."
                 );
 
-                return;
-            }
-
-
-            if (!service) {
-
-                alert(
-                    "Please select a service."
-                );
-
-                return;
-            }
-
-
-            await checkNumberAvailability(
-                country,
-                service
+            window.open(
+                "https://wa.me/2348123608821?text=" +
+                message,
+                "_blank"
             );
+
         }
     );
+
 }
 
 
 /* =========================================================
-   CHECK NUMBER AVAILABILITY
+   RECENT ORDERS
    ========================================================= */
 
-async function checkNumberAvailability(
-    country,
-    service
-) {
+function getLocalOrders() {
 
-    if (!getAuthSession()) {
-        showAuthScreen();
+    try {
+
+        const data =
+            localStorage.getItem(
+                GDSVERIFY.storage.orders
+            );
+
+        if (!data) {
+            return [];
+        }
+
+        const orders =
+            JSON.parse(data);
+
+        return Array.isArray(orders)
+            ? orders
+            : [];
+
+    } catch (error) {
+
+        return [];
+
+    }
+
+}
+
+
+function saveLocalOrder(order) {
+
+    const orders =
+        getLocalOrders();
+
+    orders.unshift(order);
+
+    if (orders.length > 20) {
+        orders.length = 20;
+    }
+
+    localStorage.setItem(
+        GDSVERIFY.storage.orders,
+        JSON.stringify(orders)
+    );
+
+}
+
+
+function loadRecentOrders() {
+
+    const container =
+        $("recentOrders");
+
+    if (!container) {
         return;
     }
 
+    const orders =
+        getLocalOrders();
+
+    if (!orders.length) {
+
+        container.innerHTML =
+            '<div class="empty-state">No recent orders yet.</div>';
+
+        return;
+    }
+
+    container.innerHTML =
+        orders.slice(0, 5).map(
+            function (order) {
+
+                return `
+                    <div class="order-item">
+                        <div>
+                            <strong>
+                                ${escapeHtml(
+                                    order.service ||
+                                    "Virtual Number"
+                                )}
+                            </strong>
+                            <small>
+                                ${escapeHtml(
+                                    order.country || ""
+                                )}
+                            </small>
+                        </div>
+
+                        <div>
+                            <strong>
+                                ${escapeHtml(
+                                    order.status ||
+                                    "Pending"
+                                )}
+                            </strong>
+                        </div>
+                    </div>
+                `;
+
+            }
+        ).join("");
+
+}
+
+
+/* =========================================================
+   INITIALIZE DASHBOARD EXTRAS
+   ========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        initializeCountryServiceSelector();
+
+    }
+);
+
+/* =========================================================
+   GDSVERIFY.COM
+   CUSTOMER APPLICATION JAVASCRIPT
+   PART 3 — VIRTUAL NUMBERS / AVAILABILITY / OTP / ORDERS
+   ========================================================= */
+
+
+/* =========================================================
+   VIRTUAL NUMBER STATE
+   ========================================================= */
+
+let currentNumberOrder = null;
+
+
+/* =========================================================
+   OPEN VIRTUAL NUMBERS
+   ========================================================= */
+
+function openVirtualNumbers() {
+
+    const modal =
+        $("virtualNumbersModal");
+
+    if (!modal) {
+
+        alert(
+            "Virtual number interface is not available yet."
+        );
+
+        return;
+    }
+
+    show(modal);
+
+    const result =
+        $("availabilityResult");
+
+    if (result) {
+        result.innerHTML = "";
+    }
+
+    loadCountries();
+
+    const countrySelect =
+        $("countrySelect");
+
+    const serviceSelect =
+        $("serviceSelect");
+
+    if (countrySelect) {
+        countrySelect.value = "";
+    }
+
+    if (serviceSelect) {
+        serviceSelect.innerHTML =
+            '<option value="">Select service</option>';
+    }
+
+}
+
+
+/* =========================================================
+   CLOSE VIRTUAL NUMBER MODAL
+   ========================================================= */
+
+function closeVirtualNumbers() {
+
+    const modal =
+        $("virtualNumbersModal");
+
+    if (modal) {
+        hide(modal);
+    }
+
+    currentNumberOrder = null;
+
+}
+
+
+/* =========================================================
+   AVAILABILITY CHECK
+   ========================================================= */
+
+async function checkNumberAvailability() {
+
+    const countrySelect =
+        $("countrySelect");
+
+    const serviceSelect =
+        $("serviceSelect");
 
     const resultBox =
         $("availabilityResult");
+
+    const country =
+        countrySelect
+            ? countrySelect.value.trim()
+            : "";
+
+    const service =
+        serviceSelect
+            ? serviceSelect.value.trim()
+            : "";
+
+    if (!country) {
+
+        if (resultBox) {
+            resultBox.innerHTML =
+                '<div class="error">Please select a country.</div>';
+        }
+
+        return;
+    }
+
+    if (!service) {
+
+        if (resultBox) {
+            resultBox.innerHTML =
+                '<div class="error">Please select a service.</div>';
+        }
+
+        return;
+    }
 
 
     if (resultBox) {
 
         resultBox.innerHTML =
-            "Checking available numbers...";
+            '<div class="loading">Checking availability...</div>';
 
-        showElement(resultBox);
     }
 
 
     try {
 
         const url =
-            GDSVERIFY.api.availability +
+            GDSVERIFY.api.buyNumber +
+            "?action=availability" +
             "&country=" +
             encodeURIComponent(country) +
             "&service=" +
             encodeURIComponent(service);
 
-
-        const data =
+        const response =
             await apiRequest(url);
 
+        const available =
+            response.available ??
+            response.stock ??
+            response.count ??
+            response.data?.available ??
+            response.data?.stock ??
+            0;
 
-        displayAvailabilityResult(
-            data,
-            country,
-            service
-        );
+        if (Number(available) > 0) {
+
+            if (resultBox) {
+
+                resultBox.innerHTML = `
+                    <div class="success">
+                        <strong>Available</strong>
+                        <br>
+                        ${escapeHtml(String(available))}
+                        number(s) available.
+                    </div>
+                `;
+
+            }
+
+        } else {
+
+            if (resultBox) {
+
+                resultBox.innerHTML = `
+                    <div class="error">
+                        No number is currently available
+                        for this country and service.
+                    </div>
+                `;
+
+            }
+
+        }
 
     } catch (error) {
 
@@ -2521,282 +1747,109 @@ async function checkNumberAvailability(
             error
         );
 
-
         if (resultBox) {
 
-            resultBox.innerHTML =
-                `
-                <div class="service-message error">
-                    Unable to check availability right now.
-                    Please try again.
+            resultBox.innerHTML = `
+                <div class="error">
+                    ${escapeHtml(
+                        error.message ||
+                        "Unable to check availability."
+                    )}
                 </div>
-                `;
-        }
-    }
-}
-
-
-/* =========================================================
-   DISPLAY AVAILABILITY
-   ========================================================= */
-
-function displayAvailabilityResult(
-    data,
-    country,
-    service
-) {
-
-    const resultBox =
-        $("availabilityResult");
-
-
-    if (!resultBox) {
-        return;
-    }
-
-
-    const available =
-        data.available ??
-        data.stock ??
-        data.count ??
-        0;
-
-
-    const price =
-        data.price ??
-        data.selling_price ??
-        data.amount ??
-        0;
-
-
-    if (
-        Number(available) <= 0
-    ) {
-
-        resultBox.innerHTML =
-            `
-            <div class="service-message warning">
-                No numbers are currently available
-                for this service.
-            </div>
             `;
 
-        return;
+        }
+
     }
 
-
-    resultBox.innerHTML =
-        `
-        <div class="availability-card">
-
-            <div class="availability-info">
-
-                <strong>
-                    Number Available
-                </strong>
-
-                <span>
-                    ${escapeHtml(
-                        String(available)
-                    )}
-                </span>
-
-            </div>
-
-
-            <div class="availability-info">
-
-                <strong>
-                    Price
-                </strong>
-
-                <span>
-                    ₦${Number(
-                        price
-                    ).toLocaleString(
-                        "en-NG"
-                    )}
-                </span>
-
-            </div>
-
-
-            <button
-                type="button"
-                class="btn-primary"
-                id="buyNumberBtn"
-            >
-                Buy Number
-            </button>
-
-        </div>
-        `;
-
-
-    const buyButton =
-        $("buyNumberBtn");
-
-
-    if (buyButton) {
-
-        buyButton.addEventListener(
-            "click",
-            function () {
-
-                confirmNumberPurchase(
-                    country,
-                    service,
-                    price
-                );
-            }
-        );
-    }
 }
 
 
 /* =========================================================
-   PURCHASE CONFIRMATION
+   BUY VIRTUAL NUMBER
    ========================================================= */
 
-function confirmNumberPurchase(
-    country,
-    service,
-    price
-) {
+async function buyVirtualNumber() {
 
-    if (!getAuthSession()) {
+    const countrySelect =
+        $("countrySelect");
 
-        showAuthScreen();
+    const serviceSelect =
+        $("serviceSelect");
+
+    const country =
+        countrySelect
+            ? countrySelect.value.trim()
+            : "";
+
+    const service =
+        serviceSelect
+            ? serviceSelect.value.trim()
+            : "";
+
+    if (!country) {
+
+        alert(
+            "Please select a country."
+        );
 
         return;
     }
 
+    if (!service) {
 
-    const amount =
-        Number(price) || 0;
+        alert(
+            "Please select a service."
+        );
 
-
-    const countryName =
-        countryLabel(country);
-
-
-    const serviceName =
-        serviceLabel(service);
+        return;
+    }
 
 
     const confirmed =
-        window.confirm(
-            "Buy " +
-            serviceName +
-            " number for " +
-            countryName +
-            "?\n\n" +
-            "Price: ₦" +
-            amount.toLocaleString(
-                "en-NG"
-            )
+        confirm(
+            "Buy a virtual number for " +
+            service +
+            " in " +
+            country +
+            "?"
         );
-
 
     if (!confirmed) {
         return;
     }
 
 
-    purchaseNumber(
-        country,
-        service,
-        amount
-    );
-}
-
-
-/* =========================================================
-   PURCHASE NUMBER
-   ========================================================= */
-
-async function purchaseNumber(
-    country,
-    service,
-    amount
-) {
-
-    if (!getAuthSession()) {
-
-        showAuthScreen();
-
-        return;
-    }
-
-
-    const balance =
-        getWalletBalance();
-
-
-    if (balance < amount) {
-
-        alert(
-            "Insufficient wallet balance. Please fund your wallet first."
-        );
-
-        return;
-    }
-
-
     try {
 
-        const data =
+        const response =
             await apiRequest(
-                GDSVERIFY.api.buy,
+                GDSVERIFY.api.buyNumber,
                 {
                     method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-
-                        country:
-                            country,
-
-                        service:
-                            service
-                    })
+                    body: {
+                        country: country,
+                        service: service
+                    }
                 }
             );
 
 
-        if (
-            data.success === false
-        ) {
-
-            throw new Error(
-                data.message ||
-                "Purchase failed."
-            );
-        }
+        const order =
+            response.order ||
+            response.data ||
+            response;
 
 
-        /*
-         * Deduct customer wallet balance.
-         */
-
-        setWalletBalance(
-            balance - amount
-        );
+        currentNumberOrder =
+            order;
 
 
-        /*
-         * Save order locally for the frontend stage.
-         */
-
-        saveOrder({
+        const localOrder = {
 
             id:
-                data.order_id ||
-                data.id ||
+                order.id ||
+                order.order ||
                 Date.now(),
 
             country:
@@ -2805,45 +1858,54 @@ async function purchaseNumber(
             service:
                 service,
 
-            amount:
-                amount,
+            phone:
+                order.phone ||
+                order.number ||
+                "",
 
             status:
-                "Active",
+                order.status ||
+                "PENDING",
 
-            number:
-                data.number ||
-                "",
+            price:
+                order.price ||
+                0,
 
             createdAt:
                 new Date().toISOString()
-        });
+
+        };
 
 
-        /*
-         * Display the purchased number.
-         */
-
-        displayPurchasedNumber(
-            data
+        saveLocalOrder(
+            localOrder
         );
 
 
+        updateWalletBalance();
+
         loadRecentOrders();
+
+
+        displayPurchasedNumber(
+            localOrder
+        );
+
 
     } catch (error) {
 
         console.error(
-            "Number purchase failed:",
+            "Purchase error:",
             error
         );
 
-
         alert(
             error.message ||
-            "Unable to purchase number."
+            "Unable to purchase the number."
         );
+
     }
+
 }
 
 
@@ -2851,127 +1913,122 @@ async function purchaseNumber(
    DISPLAY PURCHASED NUMBER
    ========================================================= */
 
-function displayPurchasedNumber(data) {
-
-    const number =
-        data.number ||
-        data.phone ||
-        data.phone_number ||
-        "";
-
-
-    const orderId =
-        data.order_id ||
-        data.id ||
-        "";
-
-
-    const sms =
-        data.sms ||
-        data.code ||
-        "";
-
+function displayPurchasedNumber(order) {
 
     const resultBox =
         $("availabilityResult");
 
-
     if (!resultBox) {
+
+        alert(
+            "Number purchased successfully."
+        );
+
         return;
     }
 
 
-    resultBox.innerHTML =
-        `
-        <div class="number-result">
+    const phone =
+        order.phone ||
+        order.number ||
+        "Waiting for number";
 
-            <div class="number-result-title">
-                Number Purchased Successfully
+
+    resultBox.innerHTML = `
+
+        <div class="success">
+
+            <strong>
+                Number purchased successfully
+            </strong>
+
+            <div style="margin-top:10px;">
+                <strong>Number:</strong>
+                ${escapeHtml(phone)}
             </div>
 
-
-            <div class="number-display">
-                ${escapeHtml(
-                    number ||
-                    "Number assigned"
-                )}
+            <div style="margin-top:6px;">
+                <strong>Service:</strong>
+                ${escapeHtml(order.service)}
             </div>
 
-
-            ${
-                orderId
-                ?
-                `
-                <div class="order-reference">
-                    Order ID:
-                    ${escapeHtml(
-                        String(orderId)
-                    )}
-                </div>
-                `
-                :
-                ""
-            }
-
-
-            <div
-                id="otpDisplay"
-                class="otp-display"
-            >
-                ${
-                    sms
-                    ?
-                    "OTP: " +
-                    escapeHtml(
-                        String(sms)
-                    )
-                    :
-                    "Waiting for OTP..."
-                }
+            <div style="margin-top:6px;">
+                <strong>Country:</strong>
+                ${escapeHtml(order.country)}
             </div>
 
+            <div style="margin-top:6px;">
+                <strong>Status:</strong>
+                ${escapeHtml(order.status)}
+            </div>
 
-            ${
-                orderId
-                ?
-                `
+            <div style="margin-top:14px;">
+
                 <button
                     type="button"
-                    class="btn-primary"
-                    id="checkOtpBtn"
-                    data-order-id="${escapeHtml(
-                        String(orderId)
-                    )}"
+                    id="checkOtpButton"
+                    class="primary-btn"
                 >
                     Check OTP
                 </button>
-                `
-                :
-                ""
-            }
+
+                <button
+                    type="button"
+                    id="cancelOrderButton"
+                    class="secondary-btn"
+                >
+                    Cancel
+                </button>
+
+            </div>
+
+            <div
+                id="otpResult"
+                style="margin-top:12px;"
+            ></div>
 
         </div>
-        `;
+
+    `;
 
 
-    const checkOtpBtn =
-        $("checkOtpBtn");
+    const checkButton =
+        $("checkOtpButton");
 
+    if (checkButton) {
 
-    if (checkOtpBtn) {
-
-        checkOtpBtn.addEventListener(
+        checkButton.addEventListener(
             "click",
             function () {
 
-                checkOTP(
-                    checkOtpBtn.getAttribute(
-                        "data-order-id"
-                    )
+                checkOrderOtp(
+                    order.id
                 );
+
             }
         );
+
     }
+
+
+    const cancelButton =
+        $("cancelOrderButton");
+
+    if (cancelButton) {
+
+        cancelButton.addEventListener(
+            "click",
+            function () {
+
+                cancelNumberOrder(
+                    order.id
+                );
+
+            }
+        );
+
+    }
+
 }
 
 
@@ -2979,15 +2036,7 @@ function displayPurchasedNumber(data) {
    CHECK OTP
    ========================================================= */
 
-async function checkOTP(orderId) {
-
-    if (!getAuthSession()) {
-
-        showAuthScreen();
-
-        return;
-    }
-
+async function checkOrderOtp(orderId) {
 
     if (!orderId) {
 
@@ -2999,95 +2048,160 @@ async function checkOTP(orderId) {
     }
 
 
-    const otpDisplay =
-        $("otpDisplay");
+    const resultBox =
+        $("otpResult");
 
 
-    if (otpDisplay) {
+    if (resultBox) {
 
-        otpDisplay.textContent =
-            "Checking for OTP...";
+        resultBox.innerHTML =
+            '<div class="loading">Checking for OTP...</div>';
+
     }
 
 
     try {
 
         const url =
-            GDSVERIFY.api.order +
-            "&id=" +
-            encodeURIComponent(
-                orderId
-            );
+            GDSVERIFY.api.checkOtp +
+            "?id=" +
+            encodeURIComponent(orderId);
 
 
-        const data =
+        const response =
             await apiRequest(url);
 
 
-        const otp =
-            data.otp ||
-            data.code ||
-            data.sms ||
-            data.status;
+        const order =
+            response.order ||
+            response.data ||
+            response;
 
 
-        if (otp) {
+        const sms =
+            order.sms ||
+            order.code ||
+            order.otp ||
+            order.message ||
+            "";
 
-            if (otpDisplay) {
 
-                otpDisplay.textContent =
-                    "OTP: " +
-                    String(otp);
+        const status =
+            order.status ||
+            "PENDING";
+
+
+        if (sms) {
+
+            if (resultBox) {
+
+                resultBox.innerHTML = `
+
+                    <div class="success">
+
+                        <strong>OTP received</strong>
+
+                        <div
+                            style="
+                                font-size:28px;
+                                font-weight:bold;
+                                margin-top:10px;
+                            "
+                        >
+                            ${escapeHtml(String(sms))}
+                        </div>
+
+                    </div>
+
+                `;
+
             }
 
         } else {
 
-            if (otpDisplay) {
+            if (resultBox) {
 
-                otpDisplay.textContent =
-                    "No OTP received yet. Try again.";
+                resultBox.innerHTML = `
+
+                    <div class="info">
+
+                        <strong>
+                            No OTP yet
+                        </strong>
+
+                        <br>
+
+                        Status:
+                        ${escapeHtml(String(status))}
+
+                        <br><br>
+
+                        Tap "Check OTP" again
+                        after the SMS arrives.
+
+                    </div>
+
+                `;
+
             }
+
         }
+
+
+        updateLocalOrderStatus(
+            orderId,
+            status
+        );
+
 
     } catch (error) {
 
         console.error(
-            "OTP check failed:",
+            "OTP error:",
             error
         );
 
+        if (resultBox) {
 
-        if (otpDisplay) {
+            resultBox.innerHTML = `
 
-            otpDisplay.textContent =
-                "Unable to check OTP right now.";
+                <div class="error">
+
+                    ${escapeHtml(
+                        error.message ||
+                        "Unable to check OTP."
+                    )}
+
+                </div>
+
+            `;
+
         }
+
     }
+
 }
 
 
 /* =========================================================
-   CANCEL ORDER
+   CANCEL NUMBER ORDER
    ========================================================= */
 
-async function cancelOrder(orderId) {
-
-    if (!getAuthSession()) {
-
-        showAuthScreen();
-
-        return;
-    }
-
+async function cancelNumberOrder(orderId) {
 
     if (!orderId) {
+
+        alert(
+            "Order ID is missing."
+        );
+
         return;
     }
 
 
     const confirmed =
-        window.confirm(
-            "Are you sure you want to cancel this order?"
+        confirm(
+            "Are you sure you want to cancel this number?"
         );
 
 
@@ -3098,161 +2212,184 @@ async function cancelOrder(orderId) {
 
     try {
 
-        const data =
+        const response =
             await apiRequest(
-                GDSVERIFY.api.cancel ||
-                "/api.php?action=cancel",
+                GDSVERIFY.api.buyNumber,
                 {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-
-                        id:
-                            orderId
-                    })
+                    method: "DELETE",
+                    body: {
+                        id: orderId
+                    }
                 }
             );
 
 
-        if (
-            data.success === false
-        ) {
-
-            throw new Error(
-                data.message ||
-                "Unable to cancel order."
-            );
-        }
+        updateLocalOrderStatus(
+            orderId,
+            "CANCELLED"
+        );
 
 
         alert(
+            response.message ||
             "Order cancelled successfully."
         );
 
 
+        updateWalletBalance();
+
         loadRecentOrders();
+
+
+        closeVirtualNumbers();
+
 
     } catch (error) {
 
         console.error(
-            "Order cancellation failed:",
+            "Cancellation error:",
             error
         );
-
 
         alert(
             error.message ||
-            "Unable to cancel order."
+            "Unable to cancel this order."
         );
+
     }
+
 }
 
 
 /* =========================================================
-   SAVE ORDER
+   LOCAL ORDER STATUS
    ========================================================= */
 
-function saveOrder(order) {
+function updateLocalOrderStatus(
+    orderId,
+    status
+) {
 
-    try {
-
-        const existing =
-            JSON.parse(
-                localStorage.getItem(
-                    "gdsverify_orders"
-                ) || "[]"
-            );
+    const orders =
+        getLocalOrders();
 
 
-        if (!Array.isArray(existing)) {
-            return;
-        }
+    const updated =
+        orders.map(
+            function (order) {
 
+                if (
+                    String(order.id) ===
+                    String(orderId)
+                ) {
 
-        existing.unshift(order);
+                    return {
+                        ...order,
+                        status: status
+                    };
 
-
-        localStorage.setItem(
-            "gdsverify_orders",
-            JSON.stringify(
-                existing.slice(0, 50)
-            )
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Unable to save order:",
-            error
-        );
-    }
-}
-
-
-/* =========================================================
-   VIRTUAL NUMBER MODAL CONTROLS
-   ========================================================= */
-
-function setupModalControls() {
-
-    const closeButtons =
-        document.querySelectorAll(
-            "[data-close-modal]"
-        );
-
-
-    closeButtons.forEach(
-        function (button) {
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    const modalId =
-                        button.getAttribute(
-                            "data-close-modal"
-                        );
-
-                    if (modalId) {
-                        closeModal(modalId);
-                    }
                 }
-            );
-        }
+
+                return order;
+
+            }
+        );
+
+
+    localStorage.setItem(
+        GDSVERIFY.storage.orders,
+        JSON.stringify(updated)
     );
 
 
-    /*
-     * Clicking the dark backdrop closes the modal.
-     */
+    loadRecentOrders();
 
-    document
-        .querySelectorAll(".modal")
-        .forEach(
-            function (modal) {
+}
 
-                modal.addEventListener(
-                    "click",
-                    function (event) {
 
-                        if (
-                            event.target ===
-                            modal
-                        ) {
+/* =========================================================
+   VIRTUAL NUMBER FORM
+   ========================================================= */
 
-                            hideElement(
-                                modal
-                            );
-                        }
-                    }
-                );
+function initializeVirtualNumberForm() {
+
+    const form =
+        $("virtualNumberForm");
+
+
+    if (form) {
+
+        form.addEventListener(
+            "submit",
+            function (event) {
+
+                event.preventDefault();
+
+                buyVirtualNumber();
+
             }
         );
+
+    }
+
+
+    const availabilityButton =
+        $("checkAvailabilityBtn");
+
+
+    if (availabilityButton) {
+
+        availabilityButton.addEventListener(
+            "click",
+            function () {
+
+                checkNumberAvailability();
+
+            }
+        );
+
+    }
+
+
+    const closeButton =
+        $("closeVirtualNumbersBtn");
+
+
+    if (closeButton) {
+
+        closeButton.addEventListener(
+            "click",
+            function () {
+
+                closeVirtualNumbers();
+
+            }
+        );
+
+    }
+
+
+    const modal =
+        $("virtualNumbersModal");
+
+
+    if (modal) {
+
+        modal.addEventListener(
+            "click",
+            function (event) {
+
+                if (event.target === modal) {
+
+                    closeVirtualNumbers();
+
+                }
+
+            }
+        );
+
+    }
+
 }
 
 
@@ -3260,86 +2397,39 @@ function setupModalControls() {
    ESC KEY
    ========================================================= */
 
-function setupEscapeKey() {
+function initializeEscapeHandler() {
 
     document.addEventListener(
         "keydown",
         function (event) {
 
-            if (
-                event.key !==
-                "Escape"
-            ) {
-                return;
+            if (event.key === "Escape") {
+
+                closeVirtualNumbers();
+
             }
 
-
-            document
-                .querySelectorAll(".modal")
-                .forEach(
-                    function (modal) {
-
-                        hideElement(
-                            modal
-                        );
-                    }
-                );
         }
     );
+
 }
 
 
 /* =========================================================
-   EXTEND DASHBOARD INITIALIZATION AGAIN
+   FINAL DASHBOARD INITIALIZATION
    ========================================================= */
 
-const previousDashboardFeatures =
-    initializeDashboardFeatures;
-
-
-initializeDashboardFeatures =
+document.addEventListener(
+    "DOMContentLoaded",
     function () {
 
-        if (!getAuthSession()) {
-            return;
-        }
+        initializeVirtualNumberForm();
 
+        initializeEscapeHandler();
 
-        previousDashboardFeatures();
+        console.log(
+            "GDSVERIFY customer features initialized."
+        );
 
-
-        setupVirtualNumberForm();
-
-        setupModalControls();
-
-        setupEscapeKey();
-
-        updateWalletDisplay();
-
-        updateProfileDisplay();
-
-        loadRecentOrders();
-    };
-
-
-/* =========================================================
-   GLOBAL VIRTUAL NUMBER FUNCTIONS
-   ========================================================= */
-
-window.checkNumberAvailability =
-    checkNumberAvailability;
-
-window.purchaseNumber =
-    purchaseNumber;
-
-window.checkOTP =
-    checkOTP;
-
-window.cancelOrder =
-    cancelOrder;
-
-window.closeModal =
-    closeModal;
-
-window.openModal =
-    openModal;
+    }
+);
