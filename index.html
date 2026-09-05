@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -18,35 +20,55 @@
         content="#0b63f6"
     >
 
-    <title>GDSVERIFY - Digital Verification Services</title>
+    <title>
+        GDSVERIFY - Digital Verification Services
+    </title>
 
     <link
         rel="stylesheet"
         href="styles.css"
     >
+
 </head>
+
 
 <body>
 
+
 <!-- =====================================================
-     AUTHENTICATION SCREEN
+     GDSVERIFY
+     CUSTOMER AUTHENTICATION
      ===================================================== -->
 
-<div id="authScreen">
+<div
+    id="authScreen"
+>
 
     <div class="auth-container">
 
         <div class="auth-card">
 
-            <!-- LOGO -->
+
+            <!-- BRAND -->
 
             <div class="brand-logo">
-                <div class="logo-mark">G</div>
+
+                <div class="logo-mark">
+                    G
+                </div>
 
                 <div class="brand-text">
-                    <strong>GDSVERIFY</strong>
-                    <span>Digital Verification Services</span>
+
+                    <strong>
+                        GDSVERIFY
+                    </strong>
+
+                    <span>
+                        Digital Verification Services
+                    </span>
+
                 </div>
+
             </div>
 
 
@@ -60,23 +82,27 @@
 
 
             <!-- =================================================
-                 LOGIN
+                 LOGIN VIEW
                  ================================================= -->
 
             <div id="loginView">
 
                 <div class="auth-heading">
 
-                    <h1>Welcome Back</h1>
+                    <h1>
+                        Welcome Back
+                    </h1>
 
                     <p>
-                        Sign in to continue to your GDSVERIFY account.
+                        Sign in to continue to your
+                        GDSVERIFY account.
                     </p>
 
                 </div>
 
 
                 <form id="loginForm">
+
 
                     <div class="form-group">
 
@@ -116,7 +142,10 @@
                             <button
                                 type="button"
                                 class="password-toggle"
-                                onclick="togglePassword('loginPassword', this)"
+                                onclick="togglePassword(
+                                    'loginPassword',
+                                    this
+                                )"
                                 aria-label="Show password"
                             >
                                 👁
@@ -184,7 +213,7 @@
 
 
             <!-- =================================================
-                 REGISTER
+                 REGISTER VIEW
                  ================================================= -->
 
             <div
@@ -194,7 +223,9 @@
 
                 <div class="auth-heading">
 
-                    <h1>Create Account</h1>
+                    <h1>
+                        Create Account
+                    </h1>
 
                     <p>
                         Register to start using GDSVERIFY.
@@ -205,7 +236,9 @@
 
                 <form id="registerForm">
 
+
                     <div class="form-row">
+
 
                         <div class="form-group">
 
@@ -241,6 +274,7 @@
                             >
 
                         </div>
+
 
                     </div>
 
@@ -301,7 +335,10 @@
                             <button
                                 type="button"
                                 class="password-toggle"
-                                onclick="togglePassword('registerPassword', this)"
+                                onclick="togglePassword(
+                                    'registerPassword',
+                                    this
+                                )"
                                 aria-label="Show password"
                             >
                                 👁
@@ -332,7 +369,10 @@
                             <button
                                 type="button"
                                 class="password-toggle"
-                                onclick="togglePassword('registerConfirmPassword', this)"
+                                onclick="togglePassword(
+                                    'registerConfirmPassword',
+                                    this
+                                )"
                                 aria-label="Show password"
                             >
                                 👁
@@ -352,7 +392,9 @@
                         >
 
                         <span>
+
                             I agree to the GDSVERIFY
+
                             <button
                                 type="button"
                                 id="termsBtn"
@@ -360,6 +402,7 @@
                             >
                                 Terms & Conditions
                             </button>
+
                         </span>
 
                     </label>
@@ -371,6 +414,7 @@
                     >
                         Create Account
                     </button>
+
 
                 </form>
 
@@ -393,6 +437,7 @@
 
             </div>
 
+
         </div>
 
 
@@ -403,6 +448,7 @@
             GDSVERIFY. All rights reserved.
 
         </div>
+
 
     </div>
 
@@ -418,11 +464,13 @@
     class="hidden"
 >
 
+
     <!-- =================================================
-         HEADER
+         APPLICATION HEADER
          ================================================= -->
 
     <header class="app-header">
+
 
         <div class="header-brand">
 
@@ -431,14 +479,22 @@
             </div>
 
             <div>
-                <strong>GDSVERIFY</strong>
-                <span>Digital Verification</span>
+
+                <strong>
+                    GDSVERIFY
+                </strong>
+
+                <span>
+                    Digital Verification
+                </span>
+
             </div>
 
         </div>
 
 
         <div class="header-actions">
+
 
             <button
                 type="button"
@@ -459,25 +515,29 @@
                 👤
             </button>
 
+
         </div>
+
 
     </header>
 
 
     <!-- =================================================
-         MAIN CONTENT
+         APPLICATION MAIN
          ================================================= -->
 
     <main class="app-main">
 
 
         <!-- =================================================
-             HOME
+             HOME SECTION
              ================================================= -->
 
         <section id="homeSection">
 
+
             <div class="welcome-card">
+
 
                 <div>
 
@@ -495,9 +555,11 @@
 
                 </div>
 
+
                 <div class="welcome-icon">
                     ✓
                 </div>
+
 
             </div>
 
@@ -505,6 +567,7 @@
             <!-- WALLET -->
 
             <div class="wallet-card">
+
 
                 <div class="wallet-top">
 
@@ -535,12 +598,14 @@
                     + Fund Wallet
                 </button>
 
+
             </div>
 
 
-            <!-- QUICK SERVICES -->
+            <!-- SERVICES HEADING -->
 
             <div class="section-heading">
+
 
                 <div>
 
@@ -554,10 +619,14 @@
 
                 </div>
 
+
             </div>
 
 
+            <!-- SERVICE GRID -->
+
             <div class="service-grid">
+
 
                 <button
                     type="button"
@@ -642,12 +711,14 @@
 
                 </button>
 
+
             </div>
 
 
             <!-- RECENT ORDERS -->
 
             <div class="section-heading orders-heading">
+
 
                 <div>
 
@@ -670,6 +741,7 @@
                     View all
                 </button>
 
+
             </div>
 
 
@@ -690,9 +762,11 @@
                 class="support-card"
             >
 
+
                 <div class="support-icon">
                     💬
                 </div>
+
 
                 <div>
 
@@ -706,23 +780,27 @@
 
                 </div>
 
+
                 <span class="support-arrow">
                     →
                 </span>
 
+
             </button>
+
 
         </section>
 
 
         <!-- =================================================
-             SERVICES
+             SERVICES SECTION
              ================================================= -->
 
         <section
             id="servicesSection"
             class="hidden"
         >
+
 
             <div class="page-heading">
 
@@ -738,6 +816,7 @@
 
 
             <div class="service-grid">
+
 
                 <button
                     type="button"
@@ -822,13 +901,14 @@
 
                 </button>
 
+
             </div>
+
 
         </section>
 
-
-        <!-- =================================================
-             ORDERS
+              <!-- =================================================
+             ORDERS SECTION
              ================================================= -->
 
         <section
@@ -861,7 +941,7 @@
 
 
         <!-- =================================================
-             PROFILE
+             PROFILE SECTION
              ================================================= -->
 
         <section
@@ -946,16 +1026,19 @@
                 Log Out
             </button>
 
+
         </section>
+
 
     </main>
 
 
-    <!-- =================================================
+    <!-- =====================================================
          BOTTOM NAVIGATION
-         ================================================= -->
+         ===================================================== -->
 
     <nav class="bottom-nav">
+
 
         <button
             type="button"
@@ -1024,15 +1107,15 @@
 
         </button>
 
+
     </nav>
+
 
 </div>
 
 
-<script src="app.js"></script>
-
-    <!-- =====================================================
-     VIRTUAL NUMBERS MODAL
+<!-- =====================================================
+     VIRTUAL NUMBER MODAL
      ===================================================== -->
 
 <div
@@ -1042,7 +1125,6 @@
 
     <div class="modal-card">
 
-        <!-- MODAL HEADER -->
 
         <div class="modal-header">
 
@@ -1076,10 +1158,6 @@
         </div>
 
 
-        <!-- =================================================
-             NUMBER FORM
-             ================================================= -->
-
         <form id="virtualNumberForm">
 
 
@@ -1090,6 +1168,7 @@
                 <label for="countrySelect">
                     Country
                 </label>
+
 
                 <select
                     id="countrySelect"
@@ -1113,6 +1192,7 @@
                 <label for="serviceSelect">
                     Service
                 </label>
+
 
                 <select
                     id="serviceSelect"
@@ -1140,8 +1220,6 @@
             </button>
 
 
-            <!-- RESULT -->
-
             <div
                 id="availabilityResult"
                 class="availability-result"
@@ -1157,16 +1235,17 @@
                 Buy Number
             </button>
 
+
         </form>
 
 
-        <!-- INFORMATION -->
-
         <div class="modal-info">
+
 
             <div class="info-icon">
                 🔐
             </div>
+
 
             <div>
 
@@ -1181,14 +1260,15 @@
 
             </div>
 
+
         </div>
+
 
     </div>
 
 </div>
 
-
-<!-- =====================================================
+  <!-- =====================================================
      TERMS & CONDITIONS MODAL
      ===================================================== -->
 
@@ -1244,8 +1324,7 @@
 
             <p>
                 Wallet funds are used to purchase available
-                GDSVERIFY services. Transactions may be
-                subject to the applicable service rules.
+                GDSVERIFY services.
             </p>
 
 
@@ -1303,13 +1382,14 @@
             Close
         </button>
 
+
     </div>
 
 </div>
 
 
 <!-- =====================================================
-     GENERIC LOADING OVERLAY
+     LOADING OVERLAY
      ===================================================== -->
 
 <div
@@ -1335,175 +1415,12 @@
 
 
 <!-- =====================================================
-     APP SCRIPT
+     APPLICATION SCRIPT
      ===================================================== -->
 
 <script src="app.js"></script>
 
-    <!-- ==========================================
-     GDSVERIFY FINAL MODALS & SCRIPTS
-     ========================================== -->
-
-<!-- Loading Overlay -->
-<div id="loadingOverlay" class="loading-overlay hidden">
-    <div class="loading-box">
-        <div class="loading-spinner"></div>
-        <p>Loading...</p>
-    </div>
-</div>
-
-<!-- ==========================================
-     VIRTUAL NUMBER MODAL
-     ========================================== -->
-<div id="virtualNumbersModal" class="modal-overlay hidden">
-
-    <div class="modal-card">
-
-        <div class="modal-header">
-            <div>
-                <h2>Buy Virtual Number</h2>
-                <p>Choose a country and service</p>
-            </div>
-
-            <button
-                type="button"
-                id="closeVirtualNumbersBtn"
-                class="modal-close">
-                &times;
-            </button>
-        </div>
-
-        <form id="virtualNumberForm">
-
-            <div class="form-group">
-                <label for="countrySelect">Country</label>
-
-                <select id="countrySelect" required>
-                    <option value="">Loading countries...</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="serviceSelect">Service</label>
-
-                <select id="serviceSelect" required>
-                    <option value="">Select a country first</option>
-                </select>
-            </div>
-
-            <button
-                type="button"
-                id="checkAvailabilityBtn"
-                class="btn btn-secondary">
-                Check Availability
-            </button>
-
-            <div
-                id="availabilityResult"
-                class="availability-result hidden">
-            </div>
-
-            <button
-                type="submit"
-                class="btn btn-primary">
-                Buy Number
-            </button>
-
-        </form>
-
-    </div>
-
-</div>
-
-<!-- ==========================================
-     TERMS & CONDITIONS MODAL
-     ========================================== -->
-<div id="termsModal" class="modal-overlay hidden">
-
-    <div class="modal-card">
-
-        <div class="modal-header">
-
-            <div>
-                <h2>Terms & Conditions</h2>
-                <p>GDSVERIFY.COM</p>
-            </div>
-
-            <button
-                type="button"
-                id="closeTermsBtn"
-                class="modal-close">
-                &times;
-            </button>
-
-        </div>
-
-        <div class="terms-content">
-
-            <h3>1. Service Usage</h3>
-
-            <p>
-                GDSVERIFY provides digital verification services
-                and virtual phone numbers for legitimate purposes.
-            </p>
-
-            <h3>2. Account Responsibility</h3>
-
-            <p>
-                You are responsible for keeping your account
-                credentials secure and for all activity performed
-                through your account.
-            </p>
-
-            <h3>3. Payments</h3>
-
-            <p>
-                Wallet deposits and purchases are processed
-                according to the payment methods available on
-                GDSVERIFY.
-            </p>
-
-            <h3>4. Prohibited Activities</h3>
-
-            <p>
-                Users must not use GDSVERIFY for fraud, scams,
-                impersonation, abuse, or any unlawful activity.
-            </p>
-
-            <h3>5. Service Availability</h3>
-
-            <p>
-                Number availability depends on the available
-                inventory at the time of purchase.
-            </p>
-
-            <h3>6. Account Security</h3>
-
-            <p>
-                GDSVERIFY may restrict or suspend accounts involved
-                in suspicious or prohibited activity.
-            </p>
-
-        </div>
-
-        <button
-            type="button"
-            id="closeTermsBottomBtn"
-            class="btn btn-primary">
-            Close
-        </button>
-
-    </div>
-
-</div>
-
-<!-- ==========================================
-     APPLICATION SCRIPT
-     ========================================== -->
-
-<script src="app.js"></script>
 
 </body>
-</html>
 
-                        
+                    </html>
