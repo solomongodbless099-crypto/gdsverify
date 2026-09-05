@@ -1,420 +1,406 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0d6efd">
 
-    <title>GDSVERIFY — Digital Verification Services</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <meta
         name="description"
-        content="GDSVERIFY — Fast, secure and reliable digital verification services."
+        content="GDSVERIFY - Digital Verification Services"
     >
 
-    <link rel="stylesheet" href="styles.css">
+    <meta
+        name="theme-color"
+        content="#0b63f6"
+    >
+
+    <title>GDSVERIFY - Digital Verification Services</title>
+
+    <link
+        rel="stylesheet"
+        href="styles.css"
+    >
 </head>
 
 <body>
 
 <!-- =====================================================
-     AUTHENTICATION AREA
-====================================================== -->
+     AUTHENTICATION SCREEN
+     ===================================================== -->
 
-<div id="authScreen" class="auth-screen">
+<div id="authScreen">
 
-    <div class="auth-card">
+    <div class="auth-container">
 
-        <!-- LOGO -->
-        <div class="auth-logo">
+        <div class="auth-card">
 
-            <div class="auth-logo-icon">
-                G
-            </div>
+            <!-- LOGO -->
 
-            <div>
-                <div class="auth-logo-name">
-                    GDSVERIFY
-                </div>
+            <div class="brand-logo">
+                <div class="logo-mark">G</div>
 
-                <div class="auth-logo-tagline">
-                    DIGITAL VERIFICATION SERVICES
+                <div class="brand-text">
+                    <strong>GDSVERIFY</strong>
+                    <span>Digital Verification Services</span>
                 </div>
             </div>
 
-        </div>
+
+            <!-- AUTH MESSAGE -->
+
+            <div
+                id="authMessage"
+                class="auth-message hidden"
+                role="alert"
+            ></div>
 
 
-        <!-- =================================================
-             LOGIN
-        ================================================== -->
+            <!-- =================================================
+                 LOGIN
+                 ================================================= -->
 
-        <section id="loginView" class="auth-view">
+            <div id="loginView">
 
-            <div class="auth-heading">
-                <h1>Welcome back 👋</h1>
+                <div class="auth-heading">
 
-                <p>
-                    Sign in to your GDSVERIFY account
-                </p>
-            </div>
+                    <h1>Welcome Back</h1>
 
-
-            <form id="loginForm">
-
-                <div class="form-group">
-
-                    <label for="loginEmail">
-                        Email Address
-                    </label>
-
-                    <input
-                        type="email"
-                        id="loginEmail"
-                        class="form-control"
-                        placeholder="Enter your email"
-                        autocomplete="email"
-                        required
-                    >
+                    <p>
+                        Sign in to continue to your GDSVERIFY account.
+                    </p>
 
                 </div>
 
 
-                <div class="form-group">
+                <form id="loginForm">
 
-                    <label for="loginPassword">
-                        Password
-                    </label>
+                    <div class="form-group">
 
-                    <div class="password-field">
+                        <label for="loginEmail">
+                            Email Address
+                        </label>
 
                         <input
-                            type="password"
-                            id="loginPassword"
-                            class="form-control"
-                            placeholder="Enter your password"
-                            autocomplete="current-password"
+                            type="email"
+                            id="loginEmail"
+                            name="email"
+                            placeholder="Enter your email"
+                            autocomplete="email"
                             required
                         >
 
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="loginPassword">
+                            Password
+                        </label>
+
+                        <div class="password-wrapper">
+
+                            <input
+                                type="password"
+                                id="loginPassword"
+                                name="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('loginPassword', this)"
+                                aria-label="Show password"
+                            >
+                                👁
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="auth-options">
+
+                        <label class="checkbox-label">
+
+                            <input
+                                type="checkbox"
+                                id="rememberMe"
+                            >
+
+                            <span>
+                                Remember me
+                            </span>
+
+                        </label>
+
+
                         <button
                             type="button"
-                            class="password-toggle"
-                            data-target="loginPassword"
-                            aria-label="Show password"
+                            id="forgotPasswordBtn"
+                            class="text-button"
                         >
-                            👁
+                            Forgot password?
                         </button>
 
                     </div>
 
+
+                    <button
+                        type="submit"
+                        class="primary-btn full-width"
+                    >
+                        Login
+                    </button>
+
+                </form>
+
+
+                <div class="auth-switch">
+
+                    <span>
+                        Don't have an account?
+                    </span>
+
+                    <button
+                        type="button"
+                        id="showRegisterBtn"
+                        class="text-button"
+                    >
+                        Create Account
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 REGISTER
+                 ================================================= -->
+
+            <div
+                id="registerView"
+                class="hidden"
+            >
+
+                <div class="auth-heading">
+
+                    <h1>Create Account</h1>
+
+                    <p>
+                        Register to start using GDSVERIFY.
+                    </p>
+
                 </div>
 
 
-                <div class="auth-options">
+                <form id="registerForm">
 
-                    <label class="remember-option">
+                    <div class="form-row">
+
+                        <div class="form-group">
+
+                            <label for="registerFirstName">
+                                First Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="registerFirstName"
+                                name="firstName"
+                                placeholder="First name"
+                                autocomplete="given-name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="registerLastName">
+                                Last Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="registerLastName"
+                                name="lastName"
+                                placeholder="Last name"
+                                autocomplete="family-name"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="registerEmail">
+                            Email Address
+                        </label>
+
+                        <input
+                            type="email"
+                            id="registerEmail"
+                            name="email"
+                            placeholder="Enter your email"
+                            autocomplete="email"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="registerPhone">
+                            Phone Number
+                        </label>
+
+                        <input
+                            type="tel"
+                            id="registerPhone"
+                            name="phone"
+                            placeholder="Enter your phone number"
+                            autocomplete="tel"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="registerPassword">
+                            Password
+                        </label>
+
+                        <div class="password-wrapper">
+
+                            <input
+                                type="password"
+                                id="registerPassword"
+                                name="password"
+                                placeholder="Create a password"
+                                autocomplete="new-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('registerPassword', this)"
+                                aria-label="Show password"
+                            >
+                                👁
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="registerConfirmPassword">
+                            Confirm Password
+                        </label>
+
+                        <div class="password-wrapper">
+
+                            <input
+                                type="password"
+                                id="registerConfirmPassword"
+                                name="confirmPassword"
+                                placeholder="Confirm your password"
+                                autocomplete="new-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('registerConfirmPassword', this)"
+                                aria-label="Show password"
+                            >
+                                👁
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <label class="checkbox-label terms-checkbox">
 
                         <input
                             type="checkbox"
-                            id="rememberMe"
+                            id="acceptTerms"
+                            required
                         >
 
                         <span>
-                            Remember me
+                            I agree to the GDSVERIFY
+                            <button
+                                type="button"
+                                id="termsBtn"
+                                class="inline-link"
+                            >
+                                Terms & Conditions
+                            </button>
                         </span>
 
                     </label>
 
 
                     <button
-                        type="button"
-                        class="text-button"
-                        id="forgotPasswordBtn"
+                        type="submit"
+                        class="primary-btn full-width"
                     >
-                        Forgot password?
+                        Create Account
+                    </button>
+
+                </form>
+
+
+                <div class="auth-switch">
+
+                    <span>
+                        Already have an account?
+                    </span>
+
+                    <button
+                        type="button"
+                        id="showLoginBtn"
+                        class="text-button"
+                    >
+                        Login
                     </button>
 
                 </div>
 
-
-                <button
-                    type="submit"
-                    class="primary-button auth-submit"
-                >
-                    Sign In
-                </button>
-
-            </form>
-
-
-            <div class="auth-divider">
-                <span>OR</span>
             </div>
 
+        </div>
 
-            <div class="auth-switch">
-
-                <span>
-                    Don't have an account?
-                </span>
-
-                <button
-                    type="button"
-                    class="text-button strong"
-                    id="showRegisterBtn"
-                >
-                    Create Account
-                </button>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             REGISTRATION
-        ================================================== -->
-
-        <section
-            id="registerView"
-            class="auth-view hidden"
-        >
-
-            <div class="auth-heading">
-
-                <h1>Create your account 🚀</h1>
-
-                <p>
-                    Join GDSVERIFY and get started
-                </p>
-
-            </div>
-
-
-            <form id="registerForm">
-
-                <div class="form-row">
-
-                    <div class="form-group">
-
-                        <label for="registerFirstName">
-                            First Name
-                        </label>
-
-                        <input
-                            type="text"
-                            id="registerFirstName"
-                            class="form-control"
-                            placeholder="First name"
-                            autocomplete="given-name"
-                            required
-                        >
-
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="registerLastName">
-                            Last Name
-                        </label>
-
-                        <input
-                            type="text"
-                            id="registerLastName"
-                            class="form-control"
-                            placeholder="Last name"
-                            autocomplete="family-name"
-                            required
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="registerEmail">
-                        Email Address
-                    </label>
-
-                    <input
-                        type="email"
-                        id="registerEmail"
-                        class="form-control"
-                        placeholder="Enter your email"
-                        autocomplete="email"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="registerPhone">
-                        Phone Number
-                    </label>
-
-                    <input
-                        type="tel"
-                        id="registerPhone"
-                        class="form-control"
-                        placeholder="e.g. 08012345678"
-                        autocomplete="tel"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="registerPassword">
-                        Password
-                    </label>
-
-                    <div class="password-field">
-
-                        <input
-                            type="password"
-                            id="registerPassword"
-                            class="form-control"
-                            placeholder="Create a password"
-                            autocomplete="new-password"
-                            required
-                        >
-
-                        <button
-                            type="button"
-                            class="password-toggle"
-                            data-target="registerPassword"
-                            aria-label="Show password"
-                        >
-                            👁
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="registerConfirmPassword">
-                        Confirm Password
-                    </label>
-
-                    <div class="password-field">
-
-                        <input
-                            type="password"
-                            id="registerConfirmPassword"
-                            class="form-control"
-                            placeholder="Confirm your password"
-                            autocomplete="new-password"
-                            required
-                        >
-
-                        <button
-                            type="button"
-                            class="password-toggle"
-                            data-target="registerConfirmPassword"
-                            aria-label="Show password"
-                        >
-                            👁
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <label class="terms-option">
-
-                    <input
-                        type="checkbox"
-                        id="acceptTerms"
-                        required
-                    >
-
-                    <span>
-                        I agree to the GDSVERIFY
-                        <button
-                            type="button"
-                            class="inline-link"
-                            id="termsBtn"
-                        >
-                            Terms & Conditions
-                        </button>
-                    </span>
-
-                </label>
-
-
-                <button
-                    type="submit"
-                    class="primary-button auth-submit"
-                >
-                    Create Account
-                </button>
-
-            </form>
-
-
-            <div class="auth-divider">
-                <span>OR</span>
-            </div>
-
-
-            <div class="auth-switch">
-
-                <span>
-                    Already have an account?
-                </span>
-
-                <button
-                    type="button"
-                    class="text-button strong"
-                    id="showLoginBtn"
-                >
-                    Sign In
-                </button>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             AUTH MESSAGE
-        ================================================== -->
-
-        <div
-            id="authMessage"
-            class="auth-message hidden"
-        ></div>
-
-
-        <!-- =================================================
-             FOOTER
-        ================================================== -->
 
         <div class="auth-footer">
 
-            <span>
-                🔒 Secure & Trusted
-            </span>
-
-            <span>•</span>
-
-            <span>
-                © <span id="authYear"></span> GDSVERIFY
-            </span>
+            ©
+            <span id="authYear"></span>
+            GDSVERIFY. All rights reserved.
 
         </div>
 
@@ -424,33 +410,29 @@
 
 
 <!-- =====================================================
-     MAIN APPLICATION
-====================================================== -->
+     CUSTOMER APPLICATION
+     ===================================================== -->
 
 <div
     id="appScreen"
-    class="app-screen hidden"
+    class="hidden"
 >
 
-    <!-- HEADER -->
+    <!-- =================================================
+         HEADER
+         ================================================= -->
+
     <header class="app-header">
 
-        <div class="brand-area">
+        <div class="header-brand">
 
-            <div class="brand-icon">
+            <div class="small-logo">
                 G
             </div>
 
             <div>
-
-                <div class="brand-name">
-                    GDSVERIFY
-                </div>
-
-                <div class="brand-subtitle">
-                    Digital Verification Services
-                </div>
-
+                <strong>GDSVERIFY</strong>
+                <span>Digital Verification</span>
             </div>
 
         </div>
@@ -460,28 +442,21 @@
 
             <button
                 type="button"
-                class="icon-button"
                 id="notificationBtn"
+                class="icon-button"
                 aria-label="Notifications"
             >
                 🔔
-                <span
-                    id="notificationBadge"
-                    class="notification-badge hidden"
-                >
-                    0
-                </span>
             </button>
 
 
             <button
                 type="button"
-                class="profile-button"
                 id="profileBtn"
+                class="icon-button"
+                aria-label="Profile"
             >
-                <span id="headerUserInitial">
-                    G
-                </span>
+                👤
             </button>
 
         </div>
@@ -489,78 +464,76 @@
     </header>
 
 
-    <!-- MAIN CONTENT -->
+    <!-- =================================================
+         MAIN CONTENT
+         ================================================= -->
 
     <main class="app-main">
 
-        <!-- DASHBOARD HOME -->
 
-        <section
-            id="homeSection"
-            class="app-section"
-        >
+        <!-- =================================================
+             HOME
+             ================================================= -->
 
-            <div class="welcome-section">
+        <section id="homeSection">
+
+            <div class="welcome-card">
 
                 <div>
 
-                    <p class="small-label">
+                    <span class="welcome-label">
                         Welcome back
-                    </p>
+                    </span>
 
-                    <h1 id="welcomeUser">
-                        User 👋
+                    <h1 id="welcomeName">
+                        GDSVERIFY User
                     </h1>
+
+                    <p>
+                        Manage your verification services easily.
+                    </p>
 
                 </div>
 
-                <div class="secure-badge">
-                    🛡️ Secure
+                <div class="welcome-icon">
+                    ✓
                 </div>
 
             </div>
 
 
-            <!-- WALLET CARD -->
+            <!-- WALLET -->
 
             <div class="wallet-card">
 
                 <div class="wallet-top">
 
-                    <div>
-
-                        <span class="wallet-label">
-                            Wallet Balance
-                        </span>
-
-                        <h2 id="walletBalance">
-                            ₦0.00
-                        </h2>
-
-                    </div>
-
-                    <div class="wallet-icon">
-                        💳
-                    </div>
-
-                </div>
-
-
-                <div class="wallet-bottom">
-
                     <span>
-                        Available balance
+                        Wallet Balance
                     </span>
 
-                    <button
-                        type="button"
-                        class="wallet-fund-button"
-                        id="fundWalletBtn"
-                    >
-                        + Fund Wallet
-                    </button>
+                    <span>
+                        NGN
+                    </span>
 
                 </div>
+
+
+                <div
+                    id="walletBalance"
+                    class="wallet-balance"
+                >
+                    ₦0.00
+                </div>
+
+
+                <button
+                    type="button"
+                    id="fundWalletBtn"
+                    class="wallet-button"
+                >
+                    + Fund Wallet
+                </button>
 
             </div>
 
@@ -570,13 +543,15 @@
             <div class="section-heading">
 
                 <div>
+
                     <h2>
-                        What do you need?
+                        Services
                     </h2>
 
                     <p>
-                        Choose a service to get started
+                        Choose a service to get started.
                     </p>
+
                 </div>
 
             </div>
@@ -590,7 +565,7 @@
                     data-service="numbers"
                 >
 
-                    <div class="service-icon numbers-icon">
+                    <div class="service-icon">
                         📱
                     </div>
 
@@ -599,7 +574,7 @@
                     </strong>
 
                     <span>
-                        Get verification numbers
+                        Receive verification SMS
                     </span>
 
                 </button>
@@ -611,7 +586,7 @@
                     data-service="airtime"
                 >
 
-                    <div class="service-icon airtime-icon">
+                    <div class="service-icon">
                         📞
                     </div>
 
@@ -620,7 +595,7 @@
                     </strong>
 
                     <span>
-                        Recharge instantly
+                        Recharge mobile lines
                     </span>
 
                 </button>
@@ -632,8 +607,8 @@
                     data-service="data"
                 >
 
-                    <div class="service-icon data-icon">
-                        📶
+                    <div class="service-icon">
+                        📡
                     </div>
 
                     <strong>
@@ -641,7 +616,7 @@
                     </strong>
 
                     <span>
-                        Buy affordable data
+                        Buy mobile data plans
                     </span>
 
                 </button>
@@ -653,7 +628,7 @@
                     data-service="boost"
                 >
 
-                    <div class="service-icon boost-icon">
+                    <div class="service-icon">
                         🚀
                     </div>
 
@@ -662,7 +637,7 @@
                     </strong>
 
                     <span>
-                        Grow your social media
+                        Social media services
                     </span>
 
                 </button>
@@ -681,41 +656,27 @@
                     </h2>
 
                     <p>
-                        Your latest transactions
+                        Your latest activity.
                     </p>
 
                 </div>
 
+
                 <button
                     type="button"
                     class="text-button"
-                    id="viewAllOrdersBtn"
+                    data-section="orders"
                 >
-                    View All
+                    View all
                 </button>
 
             </div>
 
 
-            <div
-                id="recentOrders"
-                class="orders-list"
-            >
+            <div id="recentOrders">
 
                 <div class="empty-state">
-
-                    <div class="empty-icon">
-                        📦
-                    </div>
-
-                    <h3>
-                        No orders yet
-                    </h3>
-
-                    <p>
-                        Your recent orders will appear here.
-                    </p>
-
+                    No recent orders yet.
                 </div>
 
             </div>
@@ -725,22 +686,22 @@
 
             <button
                 type="button"
-                class="support-card"
                 id="whatsappSupportBtn"
+                class="support-card"
             >
 
                 <div class="support-icon">
                     💬
                 </div>
 
-                <div class="support-content">
+                <div>
 
                     <strong>
-                        Need help?
+                        Need Help?
                     </strong>
 
                     <span>
-                        Chat with GDSVERIFY Support on WhatsApp
+                        Contact GDSVERIFY Support on WhatsApp.
                     </span>
 
                 </div>
@@ -754,75 +715,313 @@
         </section>
 
 
-        <!-- OTHER SECTIONS -->
+        <!-- =================================================
+             SERVICES
+             ================================================= -->
 
         <section
             id="servicesSection"
-            class="app-section hidden"
+            class="hidden"
         >
-            <div id="servicesContent"></div>
+
+            <div class="page-heading">
+
+                <h1>
+                    Services
+                </h1>
+
+                <p>
+                    Select a GDSVERIFY service.
+                </p>
+
+            </div>
+
+
+            <div class="service-grid">
+
+                <button
+                    type="button"
+                    class="service-card"
+                    data-service="numbers"
+                >
+
+                    <div class="service-icon">
+                        📱
+                    </div>
+
+                    <strong>
+                        Virtual Numbers
+                    </strong>
+
+                    <span>
+                        Verification numbers
+                    </span>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="service-card"
+                    data-service="airtime"
+                >
+
+                    <div class="service-icon">
+                        📞
+                    </div>
+
+                    <strong>
+                        Airtime
+                    </strong>
+
+                    <span>
+                        Mobile recharge
+                    </span>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="service-card"
+                    data-service="data"
+                >
+
+                    <div class="service-icon">
+                        📡
+                    </div>
+
+                    <strong>
+                        Data
+                    </strong>
+
+                    <span>
+                        Internet bundles
+                    </span>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="service-card"
+                    data-service="boost"
+                >
+
+                    <div class="service-icon">
+                        🚀
+                    </div>
+
+                    <strong>
+                        Social Boost
+                    </strong>
+
+                    <span>
+                        Social media services
+                    </span>
+
+                </button>
+
+            </div>
+
         </section>
 
+
+        <!-- =================================================
+             ORDERS
+             ================================================= -->
 
         <section
             id="ordersSection"
-            class="app-section hidden"
+            class="hidden"
         >
-            <div id="ordersContent"></div>
+
+            <div class="page-heading">
+
+                <h1>
+                    My Orders
+                </h1>
+
+                <p>
+                    View your recent verification orders.
+                </p>
+
+            </div>
+
+
+            <div id="ordersList">
+
+                <div class="empty-state">
+                    No orders yet.
+                </div>
+
+            </div>
+
         </section>
 
 
+        <!-- =================================================
+             PROFILE
+             ================================================= -->
+
         <section
             id="profileSection"
-            class="app-section hidden"
+            class="hidden"
         >
-            <div id="profileContent"></div>
+
+            <div class="page-heading">
+
+                <h1>
+                    My Profile
+                </h1>
+
+                <p>
+                    Manage your GDSVERIFY account.
+                </p>
+
+            </div>
+
+
+            <div class="profile-card">
+
+                <div class="profile-avatar">
+                    👤
+                </div>
+
+
+                <div class="profile-details">
+
+                    <h2 id="profileName">
+                        GDSVERIFY User
+                    </h2>
+
+                    <p id="profileEmail">
+                        —
+                    </p>
+
+                    <p id="profilePhone">
+                        —
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="profile-menu">
+
+                <div class="profile-menu-item">
+
+                    <span>
+                        Account Status
+                    </span>
+
+                    <strong>
+                        Active
+                    </strong>
+
+                </div>
+
+
+                <div class="profile-menu-item">
+
+                    <span>
+                        Wallet
+                    </span>
+
+                    <strong id="profileWalletBalance">
+                        ₦0.00
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="logoutBtn"
+                class="danger-btn full-width"
+            >
+                Log Out
+            </button>
+
         </section>
 
     </main>
 
 
-    <!-- BOTTOM NAVIGATION -->
+    <!-- =================================================
+         BOTTOM NAVIGATION
+         ================================================= -->
 
     <nav class="bottom-nav">
 
         <button
             type="button"
-            class="nav-item active"
-            data-nav="home"
+            class="bottom-nav-item active"
+            data-section="home"
         >
-            <span>⌂</span>
-            <small>Home</small>
+
+            <span>
+                🏠
+            </span>
+
+            <small>
+                Home
+            </small>
+
         </button>
 
 
         <button
             type="button"
-            class="nav-item"
-            data-nav="services"
+            class="bottom-nav-item"
+            data-section="services"
         >
-            <span>▦</span>
-            <small>Services</small>
+
+            <span>
+                🛍️
+            </span>
+
+            <small>
+                Services
+            </small>
+
         </button>
 
 
         <button
             type="button"
-            class="nav-item"
-            data-nav="orders"
+            class="bottom-nav-item"
+            data-section="orders"
         >
-            <span>▤</span>
-            <small>Orders</small>
+
+            <span>
+                📋
+            </span>
+
+            <small>
+                Orders
+            </small>
+
         </button>
 
 
         <button
             type="button"
-            class="nav-item"
-            data-nav="profile"
+            class="bottom-nav-item"
+            data-section="profile"
         >
-            <span>◉</span>
-            <small>Profile</small>
+
+            <span>
+                👤
+            </span>
+
+            <small>
+                Profile
+            </small>
+
         </button>
 
     </nav>
@@ -830,11 +1029,481 @@
 </div>
 
 
+<script src="app.js"></script>
+
+    <!-- =====================================================
+     VIRTUAL NUMBERS MODAL
+     ===================================================== -->
+
+<div
+    id="virtualNumbersModal"
+    class="modal-overlay hidden"
+>
+
+    <div class="modal-card">
+
+        <!-- MODAL HEADER -->
+
+        <div class="modal-header">
+
+            <div>
+
+                <span class="modal-label">
+                    GDSVERIFY
+                </span>
+
+                <h2>
+                    Virtual Number
+                </h2>
+
+                <p>
+                    Select a country and service to get a
+                    verification number.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closeVirtualNumbersBtn"
+                class="modal-close"
+                aria-label="Close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             NUMBER FORM
+             ================================================= -->
+
+        <form id="virtualNumberForm">
+
+
+            <!-- COUNTRY -->
+
+            <div class="form-group">
+
+                <label for="countrySelect">
+                    Country
+                </label>
+
+                <select
+                    id="countrySelect"
+                    name="country"
+                    required
+                >
+
+                    <option value="">
+                        Loading countries...
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- SERVICE -->
+
+            <div class="form-group">
+
+                <label for="serviceSelect">
+                    Service
+                </label>
+
+                <select
+                    id="serviceSelect"
+                    name="service"
+                    required
+                >
+
+                    <option value="">
+                        Select service
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- AVAILABILITY -->
+
+            <button
+                type="button"
+                id="checkAvailabilityBtn"
+                class="secondary-btn full-width"
+            >
+                Check Availability
+            </button>
+
+
+            <!-- RESULT -->
+
+            <div
+                id="availabilityResult"
+                class="availability-result"
+            ></div>
+
+
+            <!-- BUY -->
+
+            <button
+                type="submit"
+                class="primary-btn full-width"
+            >
+                Buy Number
+            </button>
+
+        </form>
+
+
+        <!-- INFORMATION -->
+
+        <div class="modal-info">
+
+            <div class="info-icon">
+                🔐
+            </div>
+
+            <div>
+
+                <strong>
+                    Secure Verification
+                </strong>
+
+                <p>
+                    Your verification order is processed
+                    securely through GDSVERIFY.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
 <!-- =====================================================
-     JAVASCRIPT
-====================================================== -->
+     TERMS & CONDITIONS MODAL
+     ===================================================== -->
+
+<div
+    id="termsModal"
+    class="modal-overlay hidden"
+>
+
+    <div class="modal-card">
+
+        <div class="modal-header">
+
+            <div>
+
+                <span class="modal-label">
+                    GDSVERIFY
+                </span>
+
+                <h2>
+                    Terms & Conditions
+                </h2>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closeTermsBtn"
+                class="modal-close"
+                aria-label="Close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="terms-content">
+
+            <h3>
+                1. Account
+            </h3>
+
+            <p>
+                You are responsible for keeping your
+                GDSVERIFY account information secure.
+            </p>
+
+
+            <h3>
+                2. Wallet
+            </h3>
+
+            <p>
+                Wallet funds are used to purchase available
+                GDSVERIFY services. Transactions may be
+                subject to the applicable service rules.
+            </p>
+
+
+            <h3>
+                3. Verification Numbers
+            </h3>
+
+            <p>
+                Verification numbers are provided for
+                legitimate and lawful verification purposes.
+                Users must not use the service for fraud,
+                abuse, impersonation, or other unlawful
+                activity.
+            </p>
+
+
+            <h3>
+                4. Service Availability
+            </h3>
+
+            <p>
+                Number availability depends on the
+                availability of the underlying service.
+            </p>
+
+
+            <h3>
+                5. Prohibited Activity
+            </h3>
+
+            <p>
+                GDSVERIFY may suspend or terminate accounts
+                involved in fraudulent, abusive, or unlawful
+                activity.
+            </p>
+
+
+            <h3>
+                6. Support
+            </h3>
+
+            <p>
+                If you experience a problem with an order,
+                contact GDSVERIFY Support.
+            </p>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="closeTermsBottomBtn"
+            class="primary-btn full-width"
+        >
+            Close
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     GENERIC LOADING OVERLAY
+     ===================================================== -->
+
+<div
+    id="loadingOverlay"
+    class="loading-overlay hidden"
+>
+
+    <div class="loading-card">
+
+        <div class="loading-spinner"></div>
+
+        <strong>
+            Please wait...
+        </strong>
+
+        <span>
+            GDSVERIFY is processing your request.
+        </span>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     APP SCRIPT
+     ===================================================== -->
+
+<script src="app.js"></script>
+
+    <!-- ==========================================
+     GDSVERIFY FINAL MODALS & SCRIPTS
+     ========================================== -->
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-box">
+        <div class="loading-spinner"></div>
+        <p>Loading...</p>
+    </div>
+</div>
+
+<!-- ==========================================
+     VIRTUAL NUMBER MODAL
+     ========================================== -->
+<div id="virtualNumbersModal" class="modal-overlay hidden">
+
+    <div class="modal-card">
+
+        <div class="modal-header">
+            <div>
+                <h2>Buy Virtual Number</h2>
+                <p>Choose a country and service</p>
+            </div>
+
+            <button
+                type="button"
+                id="closeVirtualNumbersBtn"
+                class="modal-close">
+                &times;
+            </button>
+        </div>
+
+        <form id="virtualNumberForm">
+
+            <div class="form-group">
+                <label for="countrySelect">Country</label>
+
+                <select id="countrySelect" required>
+                    <option value="">Loading countries...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="serviceSelect">Service</label>
+
+                <select id="serviceSelect" required>
+                    <option value="">Select a country first</option>
+                </select>
+            </div>
+
+            <button
+                type="button"
+                id="checkAvailabilityBtn"
+                class="btn btn-secondary">
+                Check Availability
+            </button>
+
+            <div
+                id="availabilityResult"
+                class="availability-result hidden">
+            </div>
+
+            <button
+                type="submit"
+                class="btn btn-primary">
+                Buy Number
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- ==========================================
+     TERMS & CONDITIONS MODAL
+     ========================================== -->
+<div id="termsModal" class="modal-overlay hidden">
+
+    <div class="modal-card">
+
+        <div class="modal-header">
+
+            <div>
+                <h2>Terms & Conditions</h2>
+                <p>GDSVERIFY.COM</p>
+            </div>
+
+            <button
+                type="button"
+                id="closeTermsBtn"
+                class="modal-close">
+                &times;
+            </button>
+
+        </div>
+
+        <div class="terms-content">
+
+            <h3>1. Service Usage</h3>
+
+            <p>
+                GDSVERIFY provides digital verification services
+                and virtual phone numbers for legitimate purposes.
+            </p>
+
+            <h3>2. Account Responsibility</h3>
+
+            <p>
+                You are responsible for keeping your account
+                credentials secure and for all activity performed
+                through your account.
+            </p>
+
+            <h3>3. Payments</h3>
+
+            <p>
+                Wallet deposits and purchases are processed
+                according to the payment methods available on
+                GDSVERIFY.
+            </p>
+
+            <h3>4. Prohibited Activities</h3>
+
+            <p>
+                Users must not use GDSVERIFY for fraud, scams,
+                impersonation, abuse, or any unlawful activity.
+            </p>
+
+            <h3>5. Service Availability</h3>
+
+            <p>
+                Number availability depends on the available
+                inventory at the time of purchase.
+            </p>
+
+            <h3>6. Account Security</h3>
+
+            <p>
+                GDSVERIFY may restrict or suspend accounts involved
+                in suspicious or prohibited activity.
+            </p>
+
+        </div>
+
+        <button
+            type="button"
+            id="closeTermsBottomBtn"
+            class="btn btn-primary">
+            Close
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ==========================================
+     APPLICATION SCRIPT
+     ========================================== -->
 
 <script src="app.js"></script>
 
 </body>
 </html>
+
+                        
